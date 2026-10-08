@@ -52,4 +52,17 @@ describe("room adapter (relay co-op)", () => {
     place("G", "domino", 14, 10); place("G", "domino", 15, 10); place("G", "ramp", 23, 3, true);
     expect(runMachine(L4, st.placements).verdict.success).toBe(true);
   });
+  it("level 9 relay: the host builds the toss, but only the guest can place the bucket that releases the trolley", async () => {
+    const { runMachine } = await import("../../src/engine/machine/sim");
+    const { L9 } = await import("../../src/content/machine/levels");
+    let st = trsAdapter.initRoomState({ roomId: "r", roomCode: "ABCD", seed: "gala-09" });
+    const actors = ["H", "G"];
+    const place = (a: string, kind: string, gx: number, gy: number, flip = false) => ({ state: st } = commit(room(st, actors), a, { type: "place", kind, gx, gy, flip }));
+    place("H", "toy", 2, 11); place("H", "domino", 5, 10); place("H", "lever", 7, 11, true);
+    expect(trsAdapter.validateCommand(room(st, actors), "H", { type: "place", kind: "bucket", gx: 12, gy: 10, flip: false }).ok).toBe(false);
+    expect(trsAdapter.validateCommand(room(st, actors), "G", { type: "place", kind: "lever", gx: 3, gy: 11, flip: false }).ok).toBe(false);
+    expect(runMachine(L9, st.placements).verdict.success).toBe(false);
+    place("G", "bucket", 12, 10);
+    expect(runMachine(L9, st.placements).verdict.success).toBe(true);
+  });
 });

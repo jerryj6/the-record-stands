@@ -364,7 +364,15 @@ function stepMarble(world: World, st: SimState, m: MarbleState): void {
       m.s = Math.max(-VMAX, Math.min(VMAX, m.s));
       const nd = m.d + m.s;
       syncRollVel(m, seg);
-      if (nd < 0 || nd > seg.len) {
+      const lowEnd = seg.owner.startsWith("lever:") && ((nd < 0 && seg.y0 > seg.y1) || (nd > seg.len && seg.y1 > seg.y0));
+      if (lowEnd) {
+        // a seesaw's low end has a lip: the marble settles there, ready to be tossed
+        m.d = nd < 0 ? 0 : seg.len;
+        m.s = -t(m.s / 4);
+        m.x = t(seg.x0 + ((seg.x1 - seg.x0) * m.d) / seg.len);
+        m.y = t(seg.y0 + ((seg.y1 - seg.y0) * m.d) / seg.len);
+        syncRollVel(m, seg);
+      } else if (nd < 0 || nd > seg.len) {
         m.x = t(seg.x0 + ((seg.x1 - seg.x0) * nd) / seg.len);
         m.y = t(seg.y0 + ((seg.y1 - seg.y0) * nd) / seg.len);
         m.mode = "air";

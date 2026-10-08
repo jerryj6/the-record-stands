@@ -4,7 +4,7 @@ import { waitStage } from "./helpers";
 // Layout guard (not pixel baselines): every HUD label is fully visible and no
 // two HUD boxes overlap, at laptop and phone sizes, on every slice level.
 const SIZES = [{ width: 1280, height: 800 }, { width: 390, height: 844 }];
-const LEVELS = ["The Bell at Dawn", "Two Witnesses", "Through the Arch", "The Wind-up Parade", "Bucket Brigade", "The Clockwork Gate"];
+const LEVELS = ["The Bell at Dawn", "Two Witnesses", "Through the Arch", "The Wind-up Parade", "Bucket Brigade", "The Clockwork Gate", "The Second Marble", "The Seesaw Toss", "The Long Toss"];
 
 for (const size of SIZES) {
   for (const title of LEVELS) {

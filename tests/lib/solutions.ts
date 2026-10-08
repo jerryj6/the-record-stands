@@ -10,6 +10,9 @@ export const SOLUTIONS: Record<string, Placement[]> = {
   "gala-04": [P("t", "toy", 9, 11), P("d1", "domino", 12, 10), P("d2", "domino", 13, 10), P("d3", "domino", 14, 10), P("d4", "domino", 15, 10), P("r", "ramp", 23, 3, true)],
   "gala-05": [P("a", "rampLong", 7, 5), P("b", "bucket", 17, 10)],
   "gala-06": [P("a", "rampLong", 7, 5), P("b", "bucket", 17, 10), P("t", "toy", 12, 11, true)],
+  "gala-07": [P("a", "rampLong", 7, 5), P("b", "bucket", 17, 10), P("r", "ramp", 23, 3, true)],
+  "gala-08": [P("s", "lever", 9, 11), P("d", "domino", 14, 10), P("t", "toy", 17, 11, true)],
+  "gala-09": [P("s", "lever", 7, 11, true), P("d", "domino", 5, 10), P("t", "toy", 2, 11), P("b", "bucket", 12, 10)],
 };
 
 /** Plausible wrong builds per level with the failure they must produce. */
@@ -19,5 +22,8 @@ export const FAILURES: Record<string, { build: Placement[]; expect: "missing" | 
   "gala-03": { build: [...SOLUTIONS["gala-03"]!, P("d6", "domino", 23, 10)], expect: "cake" },
   "gala-06": { build: [P("a", "rampLong", 7, 5), P("b", "bucket", 17, 10), P("t", "toy", 9, 11, true)], expect: "order" },
   "gala-05": { build: [P("a", "rampLong", 7, 5), P("b", "bucket", 17, 11)], expect: "missing" },
+  "gala-07": { build: [P("a", "rampLong", 7, 5), P("b", "bucket", 17, 10), P("r", "ramp", 23, 3)], expect: "cake" },
+  "gala-08": { build: [P("s", "lever", 9, 11), P("d", "domino", 14, 10), P("t", "toy", 17, 11)], expect: "cake" },
+  "gala-09": { build: [P("s", "lever", 7, 11, true), P("d", "domino", 5, 10), P("t", "toy", 2, 11)], expect: "missing" },
   "gala-04": { build: SOLUTIONS["gala-04"]!.filter((p) => p.kind !== "ramp"), expect: "cake" },
 };

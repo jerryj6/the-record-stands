@@ -191,7 +191,90 @@ export const L6: MachineLevel = {
   hint: "The toy is a clock: one cell takes about half a second. Start it farther away.",
 };
 
-export const MACHINE_LEVELS: readonly MachineLevel[] = [L1, L2, L3, L4, L5, L6];
+export const L7: MachineLevel = {
+  id: "gala-07",
+  number: 7,
+  title: "The Second Marble",
+  brief: "Ring the market bell, then make the falling marble ring the parade bell. Spare the cake.",
+  cols: 28,
+  rows: 14,
+  terrain: [
+    { x: 0, y: 4, w: 7, h: 1 },
+    { x: 0, y: FLOOR_ROW, w: 28, h: 2 },
+  ],
+  fixed: [
+    { id: "chute", kind: "chute", gx: 1, gy: 2, vx: 260, vy: 0 },
+    { id: "market", kind: "bell", gx: 12, gy: 8, label: "Market bell" },
+    { id: "latch", kind: "lever", gx: 14, gy: 11, link: "drop", label: "Drop latch" },
+    { id: "drop", kind: "chute", gx: 24, gy: 1, held: true, vx: 0, vy: 0 },
+    { id: "parade", kind: "bell", gx: 20, gy: 5, label: "Parade bell" },
+    { id: "cake", kind: "cake", gx: 24, gy: 10, label: "Gala cake" },
+  ],
+  inventory: { rampLong: 1, ramp: 2, bucket: 1 },
+  stamps: [
+    { id: "s1", label: "MARKET BELL RINGS", kind: "ring", target: "market" },
+    { id: "s2", label: "PARADE BELL RINGS", kind: "ring", target: "parade" },
+  ],
+  stretches: [0, 14, 28],
+  maxTicks: 2400,
+  decor: [
+    { kind: "fountain", gx: 3, gy: 9 },
+    { kind: "lampTall", gx: 21, gy: 9 },
+  ],
+  hint: "A caught marble trips the latch. The second marble drops straight down unless a ramp turns it.",
+};
+
+export const L8: MachineLevel = {
+  id: "gala-08",
+  number: 8,
+  title: "The Seesaw Toss",
+  brief: "The marble only reaches the street. Toss it up to the balcony bell, and keep the toy away from the cake.",
+  cols: 28,
+  rows: 14,
+  terrain: [{ x: 0, y: FLOOR_ROW, w: 28, h: 2 }],
+  fixed: [
+    { id: "chute", kind: "chute", gx: 9, gy: 1, vx: 0, vy: 0 },
+    { id: "balcony", kind: "bell", gx: 7, gy: 7, label: "Balcony bell" },
+    { id: "cake", kind: "cake", gx: 22, gy: 10, label: "Gala cake" },
+  ],
+  inventory: { lever: 1, domino: 2, toy: 1, ramp: 1 },
+  stamps: [{ id: "s1", label: "BALCONY BELL RINGS", kind: "ring", target: "balcony" }],
+  stretches: [0, 14, 28],
+  maxTicks: 2400,
+  decor: [
+    { kind: "stall", gx: 1, gy: 9 },
+    { kind: "lampTall", gx: 19, gy: 9 },
+  ],
+  hint: "A marble resting on a seesaw's low end flies when something lands on the high end.",
+};
+
+export const L9: MachineLevel = {
+  id: "gala-09",
+  number: 9,
+  title: "The Long Toss",
+  brief: "Toss the marble into the bucket on the brake so the cake trolley rolls through the arch.",
+  cols: 34,
+  rows: 14,
+  terrain: [{ x: 0, y: FLOOR_ROW, w: 34, h: 2 }],
+  fixed: [
+    { id: "chute", kind: "chute", gx: 10, gy: 1, vx: 0, vy: 0 },
+    { id: "brake", kind: "lever", gx: 12, gy: 11, flip: true, link: "trolley", label: "Trolley brake" },
+    { id: "trolley", kind: "trolley", gx: 19, gy: 10, held: true, label: "Cake trolley" },
+    { id: "arch", kind: "arch", gx: 24, gy: 8, label: "Parade arch" },
+    { id: "buffer", kind: "buffer", gx: 33, gy: 11 },
+  ],
+  inventory: { lever: 1, domino: 2, toy: 1, bucket: 1, ramp: 1 },
+  stamps: [{ id: "s1", label: "TROLLEY PASSES ARCH", kind: "pass", target: "arch" }],
+  stretches: [0, 11, 34],
+  maxTicks: 2400,
+  decor: [
+    { kind: "stall", gx: 15, gy: 9 },
+    { kind: "lamp", gx: 29, gy: 10 },
+  ],
+  hint: "Catch the marble where it lands, on the brake's raised end. A tossed marble flies away from the end that was struck.",
+};
+
+export const MACHINE_LEVELS: readonly MachineLevel[] = [L1, L2, L3, L4, L5, L6, L7, L8, L9];
 export function machineLevel(id: string): MachineLevel {
   return MACHINE_LEVELS.find((l) => l.id === id) ?? L1;
 }

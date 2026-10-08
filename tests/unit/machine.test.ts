@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { L1, L2, L3, L4, L5, L6, MACHINE_LEVELS } from "../../src/content/machine/levels";
+import { L1, L2, L3, L4, L5, L6, L7, L8, L9, MACHINE_LEVELS } from "../../src/content/machine/levels";
 import { SOLUTIONS } from "../lib/solutions";
 import { runMachine } from "../../src/engine/machine/sim";
 import { canPlace } from "../../src/engine/machine/geometry";
@@ -212,5 +212,75 @@ describe("level 6 — The Clockwork Gate", () => {
   it("tempting wrong build: a toy started too far away winds down before the gate", () => {
     const r = runMachine(L6, [P("a", "rampLong", 7, 5), P("b", "bucket", 17, 10), P("t", "toy", 14, 11, true)]);
     expect(r.verdict.reasons).toEqual(["No one saw “GATE BELL RINGS”."]);
+  });
+});
+
+/** Parts of a solution that only the second relay player may place; the machine must fail without them. */
+function partnerLoadBearing(level: MachineLevel, sol: Placement[]): Placement[] {
+  const partner = rangeFor(level, 2, 2)!;
+  const host = rangeFor(level, 1, 2)!;
+  const theirs = sol.filter((p) => !canPlace(level, [], p.kind, p.gx, p.gy, p.flip, undefined, host).ok);
+  theirs.forEach((p) => expect(canPlace(level, [], p.kind, p.gx, p.gy, p.flip, undefined, partner)).toEqual({ ok: true }));
+  expect(theirs.length).toBeGreaterThan(0);
+  expect(runMachine(level, sol.filter((p) => !theirs.includes(p))).verdict.success).toBe(false);
+  return theirs;
+}
+
+describe("level 7 — The Second Marble", () => {
+  it("the caught marble trips the latch and a flipped ramp turns the second marble into the parade bell", () => {
+    const sol = SOLUTIONS["gala-07"]!;
+    legal(L7, sol);
+    const r = runMachine(L7, sol);
+    expect(r.verdict.success).toBe(true);
+    const caught = r.events.find((e) => e.type === "catch")!;
+    expect(r.events.find((e) => e.type === "tip" && e.id === "latch")?.tick).toBe(caught.tick);
+    expect(partnerLoadBearing(L7, sol).map((p) => p.kind).sort()).toEqual(["bucket", "ramp"]);
+  });
+  it("tempting wrong build: the ramp left unflipped sends the second marble into the cake", () => {
+    const r = runMachine(L7, [P("a", "rampLong", 7, 5), P("b", "bucket", 17, 10), P("r", "ramp", 23, 3)]);
+    expect(r.verdict.reasons).toEqual(["No one saw “PARADE BELL RINGS”.", "The marble splattered the cake."]);
+  });
+  it("tempting wrong build: no bucket and the first marble rolls on into the cake", () => {
+    const r = runMachine(L7, [P("a", "rampLong", 7, 5), P("r", "ramp", 23, 3, true)]);
+    expect(r.verdict.reasons).toEqual(["No one saw “PARADE BELL RINGS”.", "The marble splattered the cake."]);
+  });
+});
+
+describe("level 8 — The Seesaw Toss", () => {
+  it("the marble settles on the seesaw's low end and the toy's domino tosses it up to the balcony bell", () => {
+    const sol = SOLUTIONS["gala-08"]!;
+    legal(L8, sol);
+    const r = runMachine(L8, sol);
+    expect(r.verdict.success).toBe(true);
+    expect(r.events.some((e) => e.type === "launch")).toBe(true);
+    expect(partnerLoadBearing(L8, sol).length).toBeGreaterThan(0);
+  });
+  it("tempting wrong build: a toy left facing right marches into the cake", () => {
+    const r = runMachine(L8, [P("s", "lever", 9, 11), P("d", "domino", 14, 10), P("t", "toy", 17, 11)]);
+    expect(r.verdict.reasons).toEqual(["No one saw “BALCONY BELL RINGS”.", "The wind-up toy marched into the cake."]);
+  });
+  it("tempting wrong build: no domino, so nothing strikes the high end", () => {
+    const r = runMachine(L8, [P("s", "lever", 9, 11), P("t", "toy", 17, 11, true)]);
+    expect(r.verdict.reasons).toEqual(["No one saw “BALCONY BELL RINGS”."]);
+  });
+});
+
+describe("level 9 — The Long Toss", () => {
+  it("the tossed marble drops into the bucket on the brake and the trolley rolls through the arch", () => {
+    const sol = SOLUTIONS["gala-09"]!;
+    legal(L9, sol);
+    const r = runMachine(L9, sol);
+    expect(r.verdict.success).toBe(true);
+    const caught = r.events.find((e) => e.type === "catch")!;
+    expect(r.events.find((e) => e.type === "tip" && e.id === "brake")?.tick).toBe(caught.tick);
+    expect(partnerLoadBearing(L9, sol).map((p) => p.kind)).toEqual(["bucket"]);
+  });
+  it("tempting wrong build: without the bucket the marble just lands on the brake", () => {
+    const r = runMachine(L9, SOLUTIONS["gala-09"]!.filter((p) => p.kind !== "bucket"));
+    expect(r.verdict.reasons).toEqual(["No one saw “TROLLEY PASSES ARCH”."]);
+  });
+  it("tempting wrong build: a toy turned around walks away from the domino", () => {
+    const r = runMachine(L9, [P("s", "lever", 7, 11, true), P("d", "domino", 5, 10), P("t", "toy", 2, 11, true), P("b", "bucket", 12, 10)]);
+    expect(r.verdict.reasons).toEqual(["No one saw “TROLLEY PASSES ARCH”."]);
   });
 });
