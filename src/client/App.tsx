@@ -73,6 +73,7 @@ export function App() {
   };
 
   const goOnline = async (mode: "create" | "join", code?: string) => {
+    setNetErr(null);
     try {
       const client = new RoomClient({
         onJoin: (_a, rc) => setRoomCode(rc),
@@ -129,6 +130,7 @@ export function App() {
 
   if (screen === "select")
     return <div className="screen"><h2>Case files</h2>
+      <div className="actions"><button className="link" onClick={() => setScreen("title")}>← Title</button></div>
       <div className="levelgrid">{LEVELS.map(l =>
         <button key={l.id} className="levelcard" onClick={() => begin(l.id)}>
           <strong>{l.id}</strong><span>{l.def.title}</span>
@@ -143,11 +145,12 @@ export function App() {
   return <div className="screen case">
     <header>
       <button onClick={() => setScreen("select")}>← Files</button>
-      <h2>{level.levelId}: {level.title}</h2>
-      {KEY_QUESTIONS[level.levelId] && <p className="keyq">{KEY_QUESTIONS[level.levelId]}</p>}
+      <h2>{level.levelId.toUpperCase()}: {level.title}</h2>
+      {KEY_QUESTIONS[level.levelId.toUpperCase()] && <p className="keyq">{KEY_QUESTIONS[level.levelId.toUpperCase()]}</p>}
       <span className={`badge ${state.solved ? "ok" : ""}`}>
         {state.solved ? "Case closed" : `Budget ${used}/${level.interventionBudget}`}</span>
       {roomCode && <span className="badge">Room {roomCode}</span>}
+      {netErr && <p className="fail">{netErr}</p>}
       <button className="link" onClick={() => { const m = !muted; trsAudio.setMuted(m); setMuted(m); }}>
         {muted ? "Sound off" : "Sound on"}</button>
     </header>
