@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createHash } from "node:crypto";
 import { sha256Hex } from "../../src/engine/hash.js";
-import { stableStringify } from "../../src/engine/trs/engine.js";
+import { stableStringify } from "../../src/server/trs-adapter.js";
 
 describe("pure-TS sha256", () => {
   it("matches node:crypto across sizes", () => {

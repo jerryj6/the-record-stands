@@ -1,19 +1,25 @@
-import { LEVELS } from "../src/content/levels/index.js";
+import { MACHINE_LEVELS } from "../src/content/machine/levels.js";
+import { FOOTPRINT } from "../src/engine/machine/geometry.js";
 
 let fail = false;
+const err = (m: string): void => { console.error(m); fail = true; };
 const ids = new Set<string>();
-for (const l of LEVELS) {
-  const d = l.def as unknown as Record<string, unknown>;
-  const tag = `${l.id}`;
-  const need = ["levelId", "title", "horizonBeats", "entities", "routes", "sockets", "actors",
-    "interventionCosts", "interventionBudget", "sealedObservations", "desiredOutcomes", "hints", "designNote"];
-  for (const k of need) if (!(k in d)) { console.error(`${tag}: missing ${k}`); fail = true; }
-  if (ids.has(l.id)) { console.error(`duplicate level id ${l.id}`); fail = true; }
+const codeLike = /[a-z][A-Z]|[_.=]|\b(true|false|null|undefined)\b/;
+for (const l of MACHINE_LEVELS) {
+  if (ids.has(l.id)) err(`duplicate level id ${l.id}`);
   ids.add(l.id);
-  if ((d.hints as unknown[]).length < 3) { console.error(`${tag}: hints < 3`); fail = true; }
-  if ((d.sealedObservations as unknown[]).length < 1) { console.error(`${tag}: no observations`); fail = true; }
+  for (const s of l.stamps) {
+    const t = l.fixed.find((f) => f.id === s.target);
+    if (!t) err(`${l.id}: stamp ${s.id} targets missing part ${s.target}`);
+    else if ((s.kind === "ring" && t.kind !== "bell") || (s.kind === "pass" && t.kind !== "arch")) err(`${l.id}: stamp ${s.id} kind/target mismatch`);
+    if (codeLike.test(s.label)) err(`${l.id}: stamp label looks like code: ${s.label}`);
+  }
+  for (const text of [l.title, l.brief, l.hint ?? ""]) if (/[a-z][A-Z]|[_=]/.test(text)) err(`${l.id}: player text looks like code: ${text}`);
+  for (const f of l.fixed) {
+    const fp = FOOTPRINT[f.kind];
+    if (f.gx < 0 || f.gy < 0 || f.gx + fp.w > l.cols || f.gy + fp.h > l.rows) err(`${l.id}: ${f.id} off the scene`);
+  }
+  if (l.stretches[0] !== 0 || l.stretches[l.stretches.length - 1] !== l.cols) err(`${l.id}: stretches must cover the scene`);
 }
-const n = (LEVELS as readonly {id:string}[]).length;
-console.log(`content: ${n}/12 main levels authored`);
-if (n > 12) { console.error("more than 12 main levels — mastery must be separate"); fail = true; }
+console.log(`content: ${MACHINE_LEVELS.length}/12 main levels authored (rework slice)`);
 process.exit(fail ? 1 : 0);
