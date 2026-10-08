@@ -1,0 +1,73 @@
+{
+ "game": "the-record-stands",
+ "generated": "2026-10-08",
+ "sheets": {
+  "sprites/env": {
+   "sheet": "trs-env-kit.png",
+   "bg": [
+    241,
+    223,
+    193
+   ],
+   "count": 8,
+   "sprites": [
+    "trs-env-kit-00",
+    "trs-env-kit-01",
+    "trs-env-kit-02",
+    "trs-env-kit-03",
+    "trs-env-kit-04",
+    "trs-env-kit-05",
+    "trs-env-kit-06",
+    "trs-env-kit-07"
+   ]
+  },
+  "sprites/explore": {
+   "sheet": "trs-explore-sheet.png",
+   "bg": [
+    42,
+    44,
+    42
+   ],
+   "count": 12,
+   "sprites": [
+    "trs-explore-sheet-00",
+    "trs-explore-sheet-01",
+    "trs-explore-sheet-02",
+    "trs-explore-sheet-03",
+    "trs-explore-sheet-04",
+    "trs-explore-sheet-05",
+    "trs-explore-sheet-06",
+    "trs-explore-sheet-07",
+    "trs-explore-sheet-08",
+    "trs-explore-sheet-09",
+    "trs-explore-sheet-10",
+    "trs-explore-sheet-11"
+   ]
+  },
+  "sprites/props": {
+   "sheet": "trs-prop-sheet.png",
+   "bg": [
+    236,
+    219,
+    190
+   ],
+   "count": 9,
+   "sprites": [
+    "trs-prop-sheet-00",
+    "trs-prop-sheet-01",
+    "trs-prop-sheet-02",
+    "trs-prop-sheet-03",
+    "trs-prop-sheet-04",
+    "trs-prop-sheet-05",
+    "trs-prop-sheet-06",
+    "trs-prop-sheet-07",
+    "trs-prop-sheet-08"
+   ]
+  }
+ },
+ "images": {
+  "trs-cover.png": "c7ea2631637c935e9b6495d5c11f8e62e578aadde17dbf52f888e3fd51407d9f",
+  "trs-hero-anchor.png": "3cbf2a11dd539f2ac424c1e88e1bbba87e3840bddf452604be9430b78e28d9fc",
+  "trs-material-paper.png": "c58d48e5050e6be9a7a96267da7d532ff263f41255b6fc75d40a20413edf85f2"
+ }
+}

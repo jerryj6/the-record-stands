@@ -1,0 +1,149 @@
+{
+ "sheet": "trs-prop-sheet.png",
+ "size": [
+  1536,
+  1024
+ ],
+ "bg": [
+  236,
+  219,
+  190
+ ],
+ "sprites": [
+  {
+   "name": "trs-prop-sheet-00",
+   "file": "trs-prop-sheet-00.png",
+   "src_bbox": [
+    77,
+    76,
+    405,
+    520
+   ],
+   "size": [
+    328,
+    444
+   ],
+   "ink_px": 76985
+  },
+  {
+   "name": "trs-prop-sheet-01",
+   "file": "trs-prop-sheet-01.png",
+   "src_bbox": [
+    525,
+    44,
+    651,
+    501
+   ],
+   "size": [
+    126,
+    457
+   ],
+   "ink_px": 21671
+  },
+  {
+   "name": "trs-prop-sheet-02",
+   "file": "trs-prop-sheet-02.png",
+   "src_bbox": [
+    848,
+    44,
+    975,
+    503
+   ],
+   "size": [
+    127,
+    459
+   ],
+   "ink_px": 21477
+  },
+  {
+   "name": "trs-prop-sheet-03",
+   "file": "trs-prop-sheet-03.png",
+   "src_bbox": [
+    1115,
+    220,
+    1466,
+    523
+   ],
+   "size": [
+    351,
+    303
+   ],
+   "ink_px": 38457
+  },
+  {
+   "name": "trs-prop-sheet-04",
+   "file": "trs-prop-sheet-04.png",
+   "src_bbox": [
+    69,
+    579,
+    326,
+    917
+   ],
+   "size": [
+    257,
+    338
+   ],
+   "ink_px": 43305
+  },
+  {
+   "name": "trs-prop-sheet-05",
+   "file": "trs-prop-sheet-05.png",
+   "src_bbox": [
+    464,
+    564,
+    624,
+    670
+   ],
+   "size": [
+    160,
+    106
+   ],
+   "ink_px": 5937
+  },
+  {
+   "name": "trs-prop-sheet-06",
+   "file": "trs-prop-sheet-06.png",
+   "src_bbox": [
+    799,
+    593,
+    1040,
+    905
+   ],
+   "size": [
+    241,
+    312
+   ],
+   "ink_px": 45497
+  },
+  {
+   "name": "trs-prop-sheet-07",
+   "file": "trs-prop-sheet-07.png",
+   "src_bbox": [
+    1113,
+    546,
+    1487,
+    934
+   ],
+   "size": [
+    374,
+    388
+   ],
+   "ink_px": 66075
+  },
+  {
+   "name": "trs-prop-sheet-08",
+   "file": "trs-prop-sheet-08.png",
+   "src_bbox": [
+    404,
+    616,
+    686,
+    912
+   ],
+   "size": [
+    282,
+    296
+   ],
+   "ink_px": 29407
+  }
+ ]
+}

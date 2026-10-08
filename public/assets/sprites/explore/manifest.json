@@ -1,0 +1,194 @@
+{
+ "sheet": "trs-explore-sheet.png",
+ "size": [
+  1536,
+  1024
+ ],
+ "bg": [
+  42,
+  44,
+  42
+ ],
+ "sprites": [
+  {
+   "name": "trs-explore-sheet-00",
+   "file": "trs-explore-sheet-00.png",
+   "src_bbox": [
+    9,
+    3,
+    1528,
+    321
+   ],
+   "size": [
+    1519,
+    318
+   ],
+   "ink_px": 305894
+  },
+  {
+   "name": "trs-explore-sheet-01",
+   "file": "trs-explore-sheet-01.png",
+   "src_bbox": [
+    84,
+    143,
+    450,
+    280
+   ],
+   "size": [
+    366,
+    137
+   ],
+   "ink_px": 5417
+  },
+  {
+   "name": "trs-explore-sheet-02",
+   "file": "trs-explore-sheet-02.png",
+   "src_bbox": [
+    864,
+    41,
+    927,
+    125
+   ],
+   "size": [
+    63,
+    84
+   ],
+   "ink_px": 2298
+  },
+  {
+   "name": "trs-explore-sheet-03",
+   "file": "trs-explore-sheet-03.png",
+   "src_bbox": [
+    0,
+    323,
+    1537,
+    336
+   ],
+   "size": [
+    1537,
+    13
+   ],
+   "ink_px": 2663
+  },
+  {
+   "name": "trs-explore-sheet-04",
+   "file": "trs-explore-sheet-04.png",
+   "src_bbox": [
+    8,
+    333,
+    1528,
+    659
+   ],
+   "size": [
+    1520,
+    326
+   ],
+   "ink_px": 320317
+  },
+  {
+   "name": "trs-explore-sheet-05",
+   "file": "trs-explore-sheet-05.png",
+   "src_bbox": [
+    715,
+    223,
+    791,
+    275
+   ],
+   "size": [
+    76,
+    52
+   ],
+   "ink_px": 1687
+  },
+  {
+   "name": "trs-explore-sheet-06",
+   "file": "trs-explore-sheet-06.png",
+   "src_bbox": [
+    808,
+    368,
+    860,
+    440
+   ],
+   "size": [
+    52,
+    72
+   ],
+   "ink_px": 1547
+  },
+  {
+   "name": "trs-explore-sheet-07",
+   "file": "trs-explore-sheet-07.png",
+   "src_bbox": [
+    0,
+    666,
+    1537,
+    677
+   ],
+   "size": [
+    1537,
+    11
+   ],
+   "ink_px": 2134
+  },
+  {
+   "name": "trs-explore-sheet-08",
+   "file": "trs-explore-sheet-08.png",
+   "src_bbox": [
+    7,
+    675,
+    1528,
+    1014
+   ],
+   "size": [
+    1521,
+    339
+   ],
+   "ink_px": 343040
+  },
+  {
+   "name": "trs-explore-sheet-09",
+   "file": "trs-explore-sheet-09.png",
+   "src_bbox": [
+    410,
+    764,
+    462,
+    839
+   ],
+   "size": [
+    52,
+    75
+   ],
+   "ink_px": 1193
+  },
+  {
+   "name": "trs-explore-sheet-10",
+   "file": "trs-explore-sheet-10.png",
+   "src_bbox": [
+    926,
+    709,
+    981,
+    782
+   ],
+   "size": [
+    55,
+    73
+   ],
+   "ink_px": 1350
+  },
+  {
+   "name": "trs-explore-sheet-11",
+   "file": "trs-explore-sheet-11.png",
+   "src_bbox": [
+    993,
+    873,
+    1049,
+    965
+   ],
+   "size": [
+    56,
+    92
+   ],
+   "ink_px": 1872
+  }
+ ]
+}

@@ -1,0 +1,134 @@
+{
+ "sheet": "trs-env-kit.png",
+ "size": [
+  1536,
+  1024
+ ],
+ "bg": [
+  241,
+  223,
+  193
+ ],
+ "sprites": [
+  {
+   "name": "trs-env-kit-00",
+   "file": "trs-env-kit-00.png",
+   "src_bbox": [
+    23,
+    81,
+    402,
+    458
+   ],
+   "size": [
+    379,
+    377
+   ],
+   "ink_px": 64311
+  },
+  {
+   "name": "trs-env-kit-01",
+   "file": "trs-env-kit-01.png",
+   "src_bbox": [
+    412,
+    81,
+    791,
+    458
+   ],
+   "size": [
+    379,
+    377
+   ],
+   "ink_px": 63071
+  },
+  {
+   "name": "trs-env-kit-02",
+   "file": "trs-env-kit-02.png",
+   "src_bbox": [
+    818,
+    178,
+    1168,
+    465
+   ],
+   "size": [
+    350,
+    287
+   ],
+   "ink_px": 51798
+  },
+  {
+   "name": "trs-env-kit-03",
+   "file": "trs-env-kit-03.png",
+   "src_bbox": [
+    1174,
+    177,
+    1520,
+    463
+   ],
+   "size": [
+    346,
+    286
+   ],
+   "ink_px": 51315
+  },
+  {
+   "name": "trs-env-kit-04",
+   "file": "trs-env-kit-04.png",
+   "src_bbox": [
+    14,
+    567,
+    408,
+    928
+   ],
+   "size": [
+    394,
+    361
+   ],
+   "ink_px": 89596
+  },
+  {
+   "name": "trs-env-kit-05",
+   "file": "trs-env-kit-05.png",
+   "src_bbox": [
+    415,
+    551,
+    788,
+    905
+   ],
+   "size": [
+    373,
+    354
+   ],
+   "ink_px": 49790
+  },
+  {
+   "name": "trs-env-kit-06",
+   "file": "trs-env-kit-06.png",
+   "src_bbox": [
+    816,
+    566,
+    1128,
+    906
+   ],
+   "size": [
+    312,
+    340
+   ],
+   "ink_px": 38417
+  },
+  {
+   "name": "trs-env-kit-07",
+   "file": "trs-env-kit-07.png",
+   "src_bbox": [
+    1163,
+    529,
+    1513,
+    905
+   ],
+   "size": [
+    350,
+    376
+   ],
+   "ink_px": 66951
+  }
+ ]
+}
