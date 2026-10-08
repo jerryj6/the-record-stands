@@ -9,7 +9,7 @@ import { trsAudio, type TrsCue } from "./audio.js";
 
 const engine = new TrsEngine();
 
-type Screen = "title" | "select" | "case" | "lobby";
+type Screen = "title" | "select" | "case" | "lobby" | "credits";
 
 const POS: Record<string, [number, number]> = {
   start: [40, 300], laneWest: [110, 250], fountainEdge: [210, 220], bellCorner: [310, 190],
@@ -111,7 +111,20 @@ export function App() {
       <p className="tag">The gala went wrong. Prove you know why — then make it go right.</p>
       <button onClick={() => setScreen("select")}>Open the case files</button>
       <button onClick={() => setScreen("lobby")}>Play together</button>
+      <button className="link" onClick={() => setScreen("credits")}>Credits</button>
       {netErr && <p className="fail">{netErr}</p>}
+    </div>;
+
+  if (screen === "credits")
+    return <div className="screen"><h2>Credits</h2>
+      <p className="why">The Record Stands — a sealed-observation puzzle in twelve files.</p>
+      <ul>
+        <li>A Devin production for the AI Skills Studio Challenge.</li>
+        <li>Design, engine, interface, and levels built in the open; no external art or audio assets — every cue and image is generated in-repo.</li>
+        <li>Engine: deterministic beat simulation over a shared town timeline. Multiplayer: live rooms over WebSocket.</li>
+        <li>The night clerk keeps the ledger; the town keeps its accounts.</li>
+      </ul>
+      <button className="link" onClick={() => setScreen("title")}>← Back</button>
     </div>;
 
   if (screen === "lobby") {

@@ -22,6 +22,7 @@ function b64decode(b64: string): string {
 export class RoomClient {
   private ws: WebSocket | null = null;
   actorId: string | null = null;
+  resumeToken: string | null = null;
   roomCode: string | null = null;
   revision = -1;
   private seq = 0;
@@ -43,7 +44,18 @@ export class RoomClient {
   createRoom(gameType: string, seed?: string) {
     this.send({ type: "create", gameType, ...(seed !== undefined ? { seed } : {}) });
   }
-  joinRoom(code: string) { this.send({ type: "join", room: code.toUpperCase() }); }
+  joinRoom(code: string) {
+    const room = code.toUpperCase();
+    let resume: { actorId?: string; resumeToken?: string } = {};
+    try {
+      const saved = localStorage.getItem(`trs-actor:${room}`);
+      if (saved) {
+        const { actorId, resumeToken } = JSON.parse(saved);
+        if (typeof actorId === "string" && typeof resumeToken === "string") resume = { actorId, resumeToken };
+      }
+    } catch { /* private mode */ }
+    this.send({ type: "join", room, ...resume });
+  }
   leave() { this.send({ type: "leave" }); }
 
   command(payload: unknown) {
@@ -59,8 +71,12 @@ export class RoomClient {
   private handle(m: Record<string, unknown>) {
     if (m.type === "full_state") {
       this.actorId = m.actorId as string;
+      this.resumeToken = m.resumeToken as string;
       const meta = m.room as { roomCode?: string };
       this.roomCode = meta.roomCode ?? null;
+      if (this.roomCode && this.resumeToken) {
+        try { localStorage.setItem(`trs-actor:${this.roomCode}`, JSON.stringify({ actorId: this.actorId, resumeToken: this.resumeToken })); } catch { /* private mode */ }
+      }
       this.revision = m.revision as number;
       this.ev.onJoin?.(this.actorId, this.roomCode ?? "");
       const snap = m.snapshot as { data: string } | undefined;
