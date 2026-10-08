@@ -65,7 +65,7 @@ export function App() {
         onJoin: (_a, rc) => setRoomCode(rc),
         onState: (rs) => {
           const r = rs as { levelId: string; state: TrsPlayState };
-          net.current && (net.current.levelId = r.levelId);
+          if (net.current) net.current.levelId = r.levelId;
           setLevelId(r.levelId); setState(r.state);
         },
         onCommand: (p) => fold(p),
