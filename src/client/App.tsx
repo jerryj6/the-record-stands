@@ -247,7 +247,6 @@ function SceneView({ level, run, state }: { level: CaseDefinition; run: RunRecor
       const cue = CUE_FOR[e.type];
       if (cue) trsAudio.play(cue, `${e.type}:${e.entityId}:${beat}:${i}`);
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [beat, run]);
   const beats0 = run?.timeline.beats ?? [];
   useEffect(() => {
