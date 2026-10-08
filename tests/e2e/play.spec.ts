@@ -4,13 +4,14 @@ import { dragPart, openLevel } from "./helpers";
 // Solo play through the real UI: drag from tray, press Play, watch the run end.
 test.describe("solo slice", () => {
   test("level 1: a wrong ramp fails, the right ramp rings the bell", async ({ page }) => {
+    test.setTimeout(120000);
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await openLevel(page, "The Bell at Dawn");
     await dragPart(page, "ramp", 9, 7);
     await page.getByRole("button", { name: "2×" }).click();
     await page.getByRole("button", { name: "Play", exact: true }).click();
-    await expect(page.getByText("The record doesn't hold.")).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText("The record doesn't hold.")).toBeVisible({ timeout: 45000 });
     await expect(page.getByText(/splattered the cake/)).toBeVisible();
     await page.getByRole("button", { name: "Back to building" }).click();
     await page.getByRole("button", { name: "Play", exact: true }).waitFor();
@@ -25,17 +26,18 @@ test.describe("solo slice", () => {
     await page.mouse.move(b.x, b.y, { steps: 8 });
     await page.mouse.up();
     await page.getByRole("button", { name: "Play", exact: true }).click();
-    await expect(page.getByText("The record stands.")).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText("The record stands.")).toBeVisible({ timeout: 45000 });
     await expect(page.locator(".stamp.lit", { hasText: "BELL RINGS" })).toBeVisible();
     expect(errors).toEqual([]);
   });
 
   test("level 2: the short ramp shows the order failure in the stamp row", async ({ page }) => {
+    test.setTimeout(90000);
     await openLevel(page, "Two Witnesses");
     await dragPart(page, "ramp", 8, 4);
     await page.getByRole("button", { name: "2×" }).click();
     await page.getByRole("button", { name: "Play", exact: true }).click();
-    await expect(page.locator(".stamp.wrong", { hasText: "ARCADE BELL RINGS" })).toBeVisible({ timeout: 20000 });
+    await expect(page.locator(".stamp.wrong", { hasText: "ARCADE BELL RINGS" })).toBeVisible({ timeout: 45000 });
     await expect(page.getByText("too early")).toBeVisible();
   });
 

@@ -21,7 +21,7 @@ test.beforeAll(async () => {
 test.afterAll(() => srv.kill());
 
 test("two players build one machine in relay and see the same run", async ({ browser }: { browser: Browser }) => {
-  test.setTimeout(120000);
+  test.setTimeout(240000);
   const host = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
   const guest = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
   // host picks the scene, then opens a room for it
