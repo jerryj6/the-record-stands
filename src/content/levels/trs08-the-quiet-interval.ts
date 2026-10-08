@@ -259,5 +259,5 @@ export const TRS08_CARD = {
     "The detour alone keeps every recorded passage but deletes the vesper ring the archive heard.",
   ],
   coopNote:
-    "One player can own the silence interval (scrub 5–8 and verify nothing rings), one the permitted-beat substitute (reroute vs retime the sweeper), one the dusk cart's recorded route.",
+    "Three owners, no watchers: the quiet-window auditor scrubs beats 5–8 on the repaired replay and holds the veto — if anything rings, the substitute owner's plan (retime vs reroute the sweeper) goes back on the table; the substitute owner prices the delay against the junction swing and commits it; the route auditor owns the dusk cart's recorded crossings and signs off that the detour preserves them.",
 };

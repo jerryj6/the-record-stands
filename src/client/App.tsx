@@ -140,13 +140,23 @@ export function App() {
       <section className="board"><SceneView level={level} run={shown} state={state} /></section>
       <aside className="panel">
         <h3>Sealed observations</h3>
-        <ul>{level.sealedObservations.map(o =>
-          <li key={o.id} className={shown ? (shown.evaluation.observations.find(x => x.predicateId === o.id)?.passed ? "pass" : "fail") : ""}>
-            {describeObs(o)}</li>)}</ul>
+        <ul>{level.sealedObservations.map(o => {
+          const r = shown?.evaluation.observations.find(x => x.predicateId === o.id);
+          return <li key={o.id} className={shown ? (r?.passed ? "pass" : "fail") : ""}>
+            {describeObs(o)}
+            {r && !r.passed && r.divergence &&
+              <div className="why">expected {r.divergence.expected}; {r.divergence.actual}</div>}
+          </li>;
+        })}</ul>
         <h3>Required outcome</h3>
-        <ul>{level.desiredOutcomes.map(o =>
-          <li key={o.id} className={shown ? (shown.evaluation.outcomes.find(x => x.predicateId === o.id)?.passed ? "pass" : "fail") : ""}>
-            {describeOut(o)}</li>)}</ul>
+        <ul>{level.desiredOutcomes.map(o => {
+          const r = shown?.evaluation.outcomes.find(x => x.predicateId === o.id);
+          return <li key={o.id} className={shown ? (r?.passed ? "pass" : "fail") : ""}>
+            {describeOut(o)}
+            {r && !r.passed && r.divergence &&
+              <div className="why">expected {r.divergence.expected}; {r.divergence.actual}</div>}
+          </li>;
+        })}</ul>
         <h3>Interventions</h3>
         <InterventionPanel level={level} state={state} act={act} />
         <div className="actions">
@@ -157,6 +167,16 @@ export function App() {
         </div>
         {last && <div className={`verdict ${last.evaluation.success ? "pass" : "fail"}`}>
           {last.evaluation.success ? "All evidence supports the account." : "The account does not hold."}
+          {!last.evaluation.success && (() => {
+            const failed = [...last.evaluation.observations, ...last.evaluation.outcomes]
+              .filter(p => !p.passed);
+            const first = failed
+              .filter(p => p.divergence)
+              .sort((a, b) => a.divergence!.beat - b.divergence!.beat)[0] ?? failed[0];
+            return first
+              ? <div className="why">first breach: {first.predicateId}{first.divergence ? ` at beat ${first.divergence.beat}` : ""}</div>
+              : null;
+          })()}
           {last.budgetNote && <div>{last.budgetNote}</div>}
           <button className="link" onClick={() => setViewing(viewing === null ? state.runs.length - 1 : null)}>
             {viewing === null ? "Step through timeline" : "Hide timeline"}</button>

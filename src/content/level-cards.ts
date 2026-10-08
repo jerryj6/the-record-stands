@@ -25,6 +25,57 @@ export interface LevelCard {
   readonly coopNote?: string;
 }
 
+/**
+ * Solution policy per level (GME-009 §3.6 checklist): every level declares
+ * whether its intended solve space is unique (the insight is the point),
+ * hybrid (forced core, free expression), or open (the discovery space is
+ * the level). Derived from the full solution-space enumeration
+ * (coordination dataroom/001): counts are irreducible minimal solutions.
+ */
+export type SolutionPolicy = "unique" | "hybrid" | "open";
+
+export const SOLUTION_POLICIES: Readonly<Record<string, SolutionPolicy>> = {
+  "TRS-01": "unique",   // 1 minimal solve — tutorial gate
+  "TRS-02": "unique",   // 1 — lantern lesson
+  "TRS-03": "hybrid",   // 6 — detour+toy core; compression + inherit alternates kept
+  "TRS-04": "hybrid",   // 3 — dry-keep core + supply-skid + upperCircuit/toy hybrid
+  "TRS-05": "hybrid",   // 2 — reroute vs dry-in-place; 2 gated proto-monoliths @4/3
+  "TRS-06": "hybrid",   // 3 — cloister×{toy,porter-skid} + dry-hazard
+  "TRS-07": "unique",   // 1 — pure seesaw/coupling level
+  "TRS-08": "hybrid",   // 3 — reroute / retime / vesperRoad
+  "TRS-09": "open",     // 16 — crossing-substitution space IS the level
+  "TRS-10": "hybrid",   // 6 — detour core, spare-substitute periphery
+  "TRS-11": "hybrid",   // 4 — detour core, spare-assignment periphery
+  "TRS-12": "open",     // 14 — dual-carrier relay + cross-assignment space
+};
+
+/**
+ * Difficulty vector per level (GME-009 §3.34: components must explain the
+ * chapter ordering). `minimalSolutions` = irreducible winning configs from
+ * the enumeration audit; `budget` = interventionBudget. Reading: spike
+ * levels are the discovery peaks (09, 12); TRS-07 is deliberately the
+ * tightest non-tutorial level (single solve at budget 4).
+ */
+export interface DifficultyVector {
+  readonly minimalSolutions: number;
+  readonly budget: number;
+}
+
+export const DIFFICULTY_VECTORS: Readonly<Record<string, DifficultyVector>> = {
+  "TRS-01": { minimalSolutions: 1,  budget: 2 },
+  "TRS-02": { minimalSolutions: 1,  budget: 3 },
+  "TRS-03": { minimalSolutions: 6,  budget: 3 },
+  "TRS-04": { minimalSolutions: 3,  budget: 3 },
+  "TRS-05": { minimalSolutions: 2,  budget: 3 },
+  "TRS-06": { minimalSolutions: 3,  budget: 3 },
+  "TRS-07": { minimalSolutions: 1,  budget: 4 },
+  "TRS-08": { minimalSolutions: 3,  budget: 4 },
+  "TRS-09": { minimalSolutions: 16, budget: 4 },
+  "TRS-10": { minimalSolutions: 6,  budget: 4 },
+  "TRS-11": { minimalSolutions: 4,  budget: 4 },
+  "TRS-12": { minimalSolutions: 14, budget: 5 },
+};
+
 const TRS01_CARD: LevelCard = {
   winningTraceSummary:
     "Redirect the square junction onto the dry arcade lane — same duration, the arch crossing at 5 preserved — and set the wind-up drummer at the bell socket: it strikes the brass bell at 4 (2/2).",

@@ -422,6 +422,7 @@ export const TRS12_CARD = {
     "relay-single-borrowed-road: dawnDetour + civicDetour + spareSwitch→relaySpur",
     "toy-harbor-skid-tower: dawnDetour + civicDetour + sweepSwitch→plazaSpur + PlaceAndArmToy(harborSocket)",
     "two-crew-split: dawnDetour + civicDetour + sweepSwitch→plazaSpur + spareSwitch→bankSpur",
+    "dual-carrier relay space: relaySpur admits either crew plus cross-assigned spur swings — 14 minimal solves, the finale's vocabulary check (policy: open)",
   ],
   wrongApproaches: [
     "The finch at the tower socket rings at 4 and keeps ringing — it breaks the sealed evening silence while looking like the obvious substitute.",

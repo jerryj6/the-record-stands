@@ -436,6 +436,7 @@ export const TRS09_CARD = {
     "toy-north+usher-skid: northBypass + southBypass + PlaceAndArmToy(northSocket) + usherSwitch→quaySpur",
     "toy-south+page-skid: northBypass + southBypass + PlaceAndArmToy(southSocket) + pageSwitch→terraceSpur",
     "two-skids-no-toy: northBypass + southBypass + pageSwitch→terraceSpur + usherSwitch→quaySpur",
+    "crossing-substitution space: page/usher swings × toy/skid substitutes enumerate to 16 minimal solves — the space itself is the level (policy: open)",
   ],
   wrongApproaches: [
     "The terrace-early spur rings the north bell at 3 and the quay-late spur at 5 — right cause, wrong beat: the recorded same-beat pair fails alone.",

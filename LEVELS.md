@@ -503,3 +503,54 @@ GME-009 tiers: relationship → tool → partial move; no hint plays the level.
   of TRS-08's veto.
 - Counterfactuals on both levels isolate the load-bearing predicate
   (OBS-QUIET / stripped bells).
+
+## Discovered alternates (enumeration audit, 2026-10-08)
+
+A full solution-space enumeration (conflict-free intervention configs within
+budget, all kinds/values — see coordination dataroom/001) verified the designed
+traces and found **kept alternates**: Hazelden-style "monolith" solutions that
+are interestingly distinct from the intended solve, not cheaper variants of the
+same trick. Disposition per alternate is deliberate (keep / gate / watch), and
+`tests/depth/discovered-alternates.test.ts` fences each so future edits must
+decide, not silently close a discovery space.
+
+**Solution-space width** (irreducible minimal solutions): TRS-01..12 =
+1, 1, 6, 3, 2, 3, 1, 3, 16, 6, 4, 14. The wide levels (09, 12) are
+substitute×junction permutation spaces — one mechanism family, not many;
+their cards should be read as "the discovery space is the level."
+
+### Kept alternates worth naming
+- **TRS-03 — route compression**: `Delay(bannerFloat,+1) + floatSwitch→expressAlley
+  + substitute` (3 variants: toy / marshal-skid / marshal-mainStreet). Buys back
+  the beat the express forfeits — the "shorter ≠ on time" trap is compressible
+  for +1 cost, and that is a *discovery*, not a leak: the player still learns
+  express-alone fails first. KEEP; H3 wording stays honest ("express alone").
+- **Inherited-route family ("re-let the street")** — once a convoy actor vacates
+  a route, any junction'd actor may take it: `marshalSwitch→mainStreet` (TRS-03),
+  `spareSwitch→processionWay` (TRS-10, cheapest spare solve),
+  `usherSwitch→arcadeProcession`/`pageSwitch` swings (TRS-09),
+  `spareSwitch→relaySpur` AND `sweepSwitch→relaySpur` (TRS-12 — the relay has
+  two carriers), `spareSwitch→{arcadeCut,southWay,quaySpur}` (TRS-11). A
+  coherent verb family the engine supports natively; candidate for a dedicated
+  teaching level if a chapter-4 set is ever built.
+- **TRS-04 hybrid**: `cartSwitch→upperCircuit + Toy(windUpToy@belfrySocket)` —
+  mixes the two designed strategies; legitimate third solve.
+- **TRS-08 third road**: `duskSwitch→cloisterDetour + sweepSwitch→vesperRoad` —
+  card names vesperSpur + retime; vesperRoad is the third.
+
+### Proto-monoliths (gated by budget — keep sealed)
+- **TRS-05 has TWO over-budget near misses**, not one:
+  `routeSwitch→arcadeDetour + awningSwitch→awningWade` @4/3 (documented) and
+  `routeSwitch→arcadeDetour + awningSwitch→grandTraverse` @4/3 (new — the
+  awning cart inherits the prism's vacated wet route and skids the bell at 4).
+  Both need the dry detour that only the toy would buy — a 2-coin-purse teaser.
+  KEEP GATED; they are the level's echo challenges. Verify H3 never implies a
+  3-cost solve exists.
+
+### Constraint seams (watch, not bugs)
+- TRS-09: OBS-BELL-N/S carry essentially the whole level (+480/+482 permissive
+  solutions if dropped) — by design for a bells symmetry level, but it's the
+  single point of fragility.
+- TRS-05 OBS-S-VIS (+1) and TRS-04 OBS-CLOCK (+2) are near-vacuous seals —
+  fine, but if either level ever feels under-constrained in playtest, the
+  leak runs through these facts.

@@ -34,3 +34,4 @@ li.pass{color:#9fd69f}li.fail{color:#e08a7a}
 @media(max-width:900px){.casebody{grid-template-columns:1fr}}
 
 .title-art{max-width:340px;width:70%;border-radius:12px;border:1px solid #4a4238;margin:0 auto 18px;display:block}
+li .why{font-size:12px;opacity:.85;margin:2px 0 4px;font-style:italic}
