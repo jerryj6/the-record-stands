@@ -336,7 +336,8 @@ export class Stage {
         const s = this.sprite("arch", u * 4.1);
         s.position.set(u * 1.5, u * 4);
         holder.addChild(s);
-        this.fgLayer.addChild(holder);
+        // behind the moving parts so the cake trolley stays visible as it rolls through
+        this.staticLayer.addChildAt(holder, 0);
         continue;
       } else { holder.destroy({ children: true }); continue; }
       if (p.placed && this.range && !this.inRange(p)) holder.alpha = 0.75;

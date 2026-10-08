@@ -34,4 +34,10 @@ describe("room adapter (relay co-op)", () => {
     expect(st.phase).toBe("run");
     expect(trsAdapter.validateCommand(room(st, actors), "A", { type: "flip", id: "p1" }).ok).toBe(false);
   });
+  it("resets a room persisted by the old rules instead of crashing on recovery", () => {
+    const draft = { state: {} as TrsRoomState };
+    trsAdapter.restore(draft, new TextEncoder().encode(JSON.stringify({ levelId: "TRS-01", state: { budget: 0 } })));
+    expect(draft.state.levelId).toBe("gala-01");
+    expect(draft.state.placements).toEqual([]);
+  });
 });

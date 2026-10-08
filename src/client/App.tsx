@@ -347,7 +347,7 @@ function PlayScreen(p: {
       {hint && <div className="hint" style={{ bottom: layout.tray + 14 }} role="status">{hint}</div>}
 
       {verdict && (
-        <div className={`verdict-card ${verdict.success ? "win" : "lose"}`} style={{ bottom: layout.tray + 14 }} role="dialog" aria-label="Run result">
+        <div className={`verdict-card ${verdict.success ? "win" : "lose"}`} style={{ top: layout.top + (p.online ? 44 : 12) }} role="dialog" aria-label="Run result">
           <h3>{verdict.success ? "The record stands." : "The record doesn't hold."}</h3>
           {verdict.success ? (
             <p>Every witness saw it happen, in order, and the cake made it.</p>

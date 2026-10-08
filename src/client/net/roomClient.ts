@@ -52,7 +52,7 @@ export class RoomClient {
     const room = code.toUpperCase();
     let resume: { actorId?: string; resumeToken?: string } = {};
     try {
-      const saved = localStorage.getItem(`trs-actor:${room}`);
+      const saved = sessionStorage.getItem(`trs-actor:${room}`);
       if (saved) {
         const { actorId, resumeToken } = JSON.parse(saved);
         if (typeof actorId === "string" && typeof resumeToken === "string") resume = { actorId, resumeToken };
@@ -79,7 +79,7 @@ export class RoomClient {
       const meta = m.room as { roomCode?: string };
       this.roomCode = meta.roomCode ?? null;
       if (this.roomCode && this.resumeToken) {
-        try { localStorage.setItem(`trs-actor:${this.roomCode}`, JSON.stringify({ actorId: this.actorId, resumeToken: this.resumeToken })); } catch { /* private mode */ }
+        try { sessionStorage.setItem(`trs-actor:${this.roomCode}`, JSON.stringify({ actorId: this.actorId, resumeToken: this.resumeToken })); } catch { /* private mode */ }
       }
       this.revision = m.revision as number;
       this.seat = (m.seat as number) ?? null;

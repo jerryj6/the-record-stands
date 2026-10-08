@@ -29,6 +29,13 @@ function wouldStart(room: RoomView<TrsRoomState>, actorId: string, cmd: BuildCom
   return connected(room).every((a) => ready.has(a));
 }
 
+/** Rooms persisted by an older rules version are reset to a fresh build of the first level. */
+function normalize(state: unknown): TrsRoomState {
+  const s = state as Partial<TrsRoomState> | null;
+  if (s && typeof s.levelId === "string" && Array.isArray(s.placements) && Array.isArray(s.ready) && MACHINE_LEVELS.some((l) => l.id === s.levelId)) return s as TrsRoomState;
+  return initialBuild(MACHINE_LEVELS[0]!.id);
+}
+
 export const trsAdapter: GameAdapter<TrsRoomState> = {
   gameType: "trs",
   rulesVersion: "trs-machine-0.2.0",
@@ -42,11 +49,13 @@ export const trsAdapter: GameAdapter<TrsRoomState> = {
     if (!cmd || typeof cmd !== "object" || !("type" in cmd)) return { ok: false, reason: "malformed command" };
     const c = cmd as BuildCommand;
     if (c.type === "level" && !MACHINE_LEVELS.some((l) => l.id === c.levelId)) return { ok: false, reason: "unknown level" };
-    return validateBuild(machineLevel(room.state.levelId), room.state, c, rangeOf(room, actorId));
+    const state = normalize(room.state);
+    return validateBuild(machineLevel(state.levelId), state, c, rangeOf({ ...room, state }, actorId));
   },
 
   applyCommand(room: RoomDraft<TrsRoomState>, actorId: string, cmd: unknown): unknown[] {
     const c = cmd as BuildCommand;
+    if (normalize(room.state) !== room.state) Object.assign(room.state, normalize(room.state));
     const view = room as unknown as RoomView<TrsRoomState>;
     const start = wouldStart(view, actorId, c);
     // the server commits the draft's state object, so mutate it in place
@@ -58,7 +67,7 @@ export const trsAdapter: GameAdapter<TrsRoomState> = {
     return new TextEncoder().encode(JSON.stringify(room.state));
   },
   restore(draft: { state: TrsRoomState }, bytes: Uint8Array): void {
-    draft.state = JSON.parse(new TextDecoder().decode(bytes)) as TrsRoomState;
+    draft.state = normalize(JSON.parse(new TextDecoder().decode(bytes)));
   },
   hashState(room: RoomView<TrsRoomState>): string {
     return sha256Hex(stableStringify(room.state));
