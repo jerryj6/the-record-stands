@@ -126,7 +126,7 @@ export function App() {
   };
 
   if (screen === "title")
-    return <div className="screen title">
+    return <main className="screen title">
       <img className="title-art" src="/assets/trs-cover.png" alt="Archival diorama of the gala square" />
       <h1>The Record Stands</h1>
       <p className="tag">The gala went wrong. Prove you know why — then make it go right.</p>
@@ -134,10 +134,10 @@ export function App() {
       <button onClick={() => setScreen("lobby")}>Play together</button>
       <button className="link" onClick={() => setScreen("credits")}>Credits</button>
       {netErr && <p className="fail">{netErr}</p>}
-    </div>;
+    </main>;
 
   if (screen === "credits")
-    return <div className="screen"><h2>Credits</h2>
+    return <main className="screen"><h1>Credits</h1>
       <p className="why">The Record Stands — a sealed-observation puzzle in twelve files.</p>
       <ul>
         <li>A Devin production for the AI Skills Studio Challenge.</li>
@@ -146,11 +146,11 @@ export function App() {
         <li>The night clerk keeps the ledger; the town keeps its accounts.</li>
       </ul>
       <button className="link" onClick={() => setScreen("title")}>← Back</button>
-    </div>;
+    </main>;
 
   if (screen === "lobby") {
     let codeInput = "";
-    return <div className="screen"><h2>Two heads are better</h2>
+    return <main className="screen"><h1>Two heads are better</h1>
       <p>Open a shared room on a case, or join one by code. Commands resolve on the server and replay here beat-for-beat.</p>
       <div className="actions">
         <button className="primary" onClick={() => void goOnline("create")}>Host a room ({levelId})</button>
@@ -159,27 +159,27 @@ export function App() {
       </div>
       {netErr && <p className="fail">{netErr}</p>}
       <button className="link" onClick={() => setScreen("title")}>← Back</button>
-    </div>;
+    </main>;
   }
 
   if (screen === "select")
-    return <div className="screen"><h2>Case files</h2>
+    return <main className="screen"><h1>Case files</h1>
       <div className="actions"><button className="link" onClick={() => setScreen("title")}>← Title</button></div>
       <div className="levelgrid">{LEVELS.map(l =>
         <button key={l.id} className="levelcard" onClick={() => begin(l.id)}>
           <strong>{l.id}</strong><span>{l.def.title}</span>
           {solvedIds.includes(l.id) && <span className="badge ok">solved</span>}
-        </button>)}</div></div>;
+        </button>)}</div></main>;
 
   const level = entry.def;
   const last: RunRecord | undefined = state.runs[state.runs.length - 1];
   const shown: RunRecord | undefined = viewing !== null ? state.runs[viewing] : last;
   const used = engine.committedCost(level, state.config);
 
-  return <div className="screen case">
+  return <main className="screen case">
     <header>
       <button onClick={() => setScreen("select")}>← Files</button>
-      <h2>{level.levelId.toUpperCase()}: {level.title}</h2>
+      <h1>{level.levelId.toUpperCase()}: {level.title}</h1>
       {KEY_QUESTIONS[level.levelId.toUpperCase()] && <p className="keyq">{KEY_QUESTIONS[level.levelId.toUpperCase()]}</p>}
       <span className={`badge ${state.solved ? "ok" : ""}`}>
         {state.solved ? (superseded ? "Case closed — plan modified" : "Case closed") : `Budget ${used}/${level.interventionBudget}`}</span>
@@ -192,7 +192,7 @@ export function App() {
     <div className="casebody">
       <section className="board"><SceneView level={level} run={shown} state={state} /></section>
       <aside className="panel">
-        <h3>Sealed observations</h3>
+        <h2>Sealed observations</h2>
         <ul>{level.sealedObservations.map(o => {
           const r = shown?.evaluation.observations.find(x => x.predicateId === o.id);
           return <li key={o.id} className={shown ? (r?.passed ? "pass" : "fail") : ""}>
@@ -201,7 +201,7 @@ export function App() {
               <div className="why">expected {r.divergence.expected}; {r.divergence.actual}</div>}
           </li>;
         })}</ul>
-        <h3>Required outcome</h3>
+        <h2>Required outcome</h2>
         <ul>{level.desiredOutcomes.map(o => {
           const r = shown?.evaluation.outcomes.find(x => x.predicateId === o.id);
           return <li key={o.id} className={shown ? (r?.passed ? "pass" : "fail") : ""}>
@@ -210,7 +210,7 @@ export function App() {
               <div className="why">expected {r.divergence.expected}; {r.divergence.actual}</div>}
           </li>;
         })}</ul>
-        <h3>Interventions</h3>
+        <h2>Interventions</h2>
         <InterventionPanel level={level} state={state} act={act} />
         <div className="actions">
           <button onClick={() => act({ type: "TestRun" })}>Run simulation</button>
@@ -219,7 +219,7 @@ export function App() {
             onClick={() => act({ type: "AcceptResult" })}>Present findings</button>
         </div>
         {state.solved && <div className="ending" data-ending={levelId}>
-          <h3>The record stands. Case closed.</h3>
+          <h2>The record stands. Case closed.</h2>
           {superseded && <p className="why">The plan has changed since the archive accepted it — this verdict no longer describes the board.</p>}
           <p>{level.title} — the archive accepts your account.</p>
           {levelId === "TRS-12"
@@ -248,10 +248,10 @@ export function App() {
         </div>}
         {viewing !== null && state.runs[viewing] &&
           <TimelineView beats={state.runs[viewing].timeline.beats} />}
-        <h3>Hints</h3><HintLadder hints={[...level.hints]} onReveal={setHintsUsed} />
+        <h2>Hints</h2><HintLadder hints={[...level.hints]} onReveal={setHintsUsed} />
       </aside>
     </div>
-  </div>;
+  </main>;
 }
 
 function InterventionPanel({ level, state, act }: { level: CaseDefinition; state: TrsPlayState; act: (a: TrsAction) => void }) {
@@ -373,7 +373,7 @@ function HintLadder({ hints, onReveal }: { hints: string[]; onReveal?: (n: numbe
   return <div className="hints">
     {hints.slice(0, n).map((h, i) => <p key={i} className="hint">{h}</p>)}
     {n < hints.length && <button className="link" onClick={() => { const m = n + 1; setN(m); onReveal?.(m); }}>Reveal hint {n + 1}/{hints.length}</button>}
-  </div>;
+    </div>;
 }
 
 function describeObs(o: Observation): string {
