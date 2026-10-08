@@ -1,7 +1,7 @@
-# TRS-02 … TRS-10 — level design rationale
+# TRS-02 … TRS-12 — level design rationale
 
 Author: level-designer + engineer work package, per `DEVIN-CLOUD-MASTER-HANDOFF.md`
-(Part II, TRS-D rows 2–10; TRS-001..010; CONTENT-PRODUCTION; IV.5).
+(Part II, TRS-D rows 2–12; TRS-001..010; CONTENT-PRODUCTION; IV.5).
 Engine is untouched — all content is authored within the frozen sim's exact
 vocabulary (`src/engine/trs/{types,sim,evaluate,engine}.ts`, unmodified).
 
@@ -62,6 +62,12 @@ dumping real event timelines:
   junction — two carts sharing a route are one convoy pull (TRS-10), and a
   `RouteDef` is reusable across actors (the spare cart can "borrow" the
   sweeper's spur — routes are shared resources, not owned paths).
+- Redirects apply in list order and are **last-wins** per junction: two
+  RedirectJunctions on one switch do not run both routes — the second
+  silently overwrites the first (TRS-11's naive-fix conflict).
+- A cart's skid does not stop movement, so ONE cart can chain skids —
+  wet tile at 4 then another at 5 — serving two different bells on a
+  single road (TRS-11/12 relay spur).
 
 ## trs01 reconstruction notice
 
@@ -363,13 +369,79 @@ gift cart A re-times its gate and its skid.
 
 ---
 
+## TRS-11 The Archive Exhibition (`trs-11`, chapter 3, budget 4, horizon 8)
+
+**Causal puzzle.** Two subscenes on one recorded morning: the North
+Gallery (exhibit cart skids the terrace at 4 → gallery bell) and the
+South Court (court cart skids the quay at 5 → ONE harbor strike,
+`EventCount` = 1). One canal pump feeds both tiles; one spare cart and
+one nightjar serve both halls.
+
+**Intended insight.** Repairs in neighboring subscenes affect one
+another. The naive combined fix — each half claims `spareSwitch` for its
+own spur — is a shared-resource conflict: redirects are last-wins, so the
+second claim silently deletes the first (asserted: the cart is at
+`quayNorth` at 4, never wets the terrace, **OBS-BELL-N fails alone**).
+The cheap `arcadeCut` north detour is the event conflict: beat 5 wades
+the south quay → a second harbor strike → **OBS-BELL-S fails alone**.
+
+**Two verified compensations (different allocations of the same props):**
+- **RELAY (3/4):** both detours + `spareSwitch→relaySpur` — ONE road
+  visits the terrace at 4 and the quay at 5; a single cart serves both
+  bells (skid doesn't stop movement).
+- **SPLIT (4/4):** both detours + nightjar at `gallerySocket` (strike@4)
+  + `spareSwitch→quaySpur` (skid@5). Deliberate asymmetry: no harbor
+  socket exists and the toy only ever strikes at 4 — beat 5 *requires* a
+  skid, so at least one sacrificial skid survives in every plan.
+
+**Other wrong approaches.** Shared pump off → both bells dead; both
+detours alone → both bells dead; delaying the court cart erases the
+arch, the strike count, and the annex timing together.
+
+---
+
+## TRS-12 The Town That Didn't Fall (`trs-12`, chapter 3, budget 5, horizon 8) — finale
+
+**Three connected stages of one recorded day.** Stage A: both carts'
+morning crossings at beat 2 (mill bridge, civic arch). Stage B: the two
+mishaps — plaza skid at 4 (tower bell + ruined fireworks), bank skid at
+5 (harbor bell + ruined proclamation). Stage C: the tower bell's sealed
+evening silence (`EventAbsent [5,8]`) and the green camera's view of the
+mayor's arrival at 7 (`VisibleFrom`). Outcomes complete the story —
+both cargos intact AND the rocket cart standing on the celebration green.
+
+**Three meaningfully different complete repairs:**
+- **RELAY (3/5):** both detours + `spareSwitch→relaySpur` — the single
+  borrowed road skids the plaza at 4 and the bank at 5.
+- **TOY-HARBOR (5/5):** both detours + `sweepSwitch→plazaSpur` +
+  finch at `harborSocket` — legal ONLY because the harbor bell has no
+  sealed silence; the parked finch's re-ring train covers beat 5.
+  Deliberately inverts TRS-08's veto: the same re-ring quirk that broke
+  the quiet interval is here a feature.
+- **TWO-CREW (4/5):** both detours + sweeper on `plazaSpur` + spare on
+  `bankSpur` — substitute labor split across both empty carts.
+
+**Wrong approaches.** Finch at the tower socket → **OBS-QUIET alone
+fails** (counterfactual strips it → plan "wins": the silence is
+load-bearing). Pump off → both bells dead. Relay cart without detours →
+all six observations pass and the town still falls (record ≠ outcome).
+Tower-only coverage → **OBS-HARBOR alone fails**. Delaying the rocket
+cart breaks all three stages at once (bridge@2, strike@5, silence@5).
+
+**Four-person map:** stage-A evidence ownership, per-bell substitute
+ownership (independent interventions), stage-C parallel verification
+(quiet + camera on the repaired replay), and budget/dispatch arbitration
+across the three valid plans.
+
+---
+
 ## LevelCard coverage vs. CONTENT-PRODUCTION
 
 Each level file exports `TRSxx_CARD` with `winningTraceSummary`,
 `wrongApproaches[]`, `strategySignatures` (where alternates exist), and
-`coopNote`. TRS-09 is the chapter-3 four-person case — its coopNote names
-four distinct contribution types (per-camera evidence ownership,
-per-chain intervention ownership, parallel verification). Hints follow
+`coopNote`. The required four-person set TRS-09/10/11/12 each names four
+distinct contribution types (per-camera evidence ownership, per-chain
+intervention ownership, parallel verification, budget/dispatch). Hints follow
 GME-009 tiers: relationship → tool → partial move; no hint plays the level.
 
 ## Test inventory
@@ -417,3 +489,17 @@ GME-009 tiers: relationship → tool → partial move; no hint plays the level.
 - TRS-10 asserts the shared-route convoy pull moves both carts in one
   position check, plus three different prop allocations by BellRing
   `cause` (spareCart:skid / windUpBird:strike / sweeperCart:skid).
+
+### `tests/unit/trs11-12.test.ts` (29 tests)
+
+- TRS-11 asserts the last-wins conflict directly: the naive plan's cart
+  positions prove the second redirect overwrote the first (quayNorth@4,
+  never wetTerrace) and OBS-BELL-N fails alone; the arcade-cut trap
+  doubles the harbor strike (EventCount 2 ≠ 1).
+- TRS-12 asserts the three-stage record (two@2 crossings, bells@4 and
+  @5, quiet[5,8], camera@7) and three distinct repairs by cause
+  signature; TOY-HARBOR asserts the parked-finch re-ring train
+  [4,5,6,7,8] is legal on the un-quiet bell — the deliberate inversion
+  of TRS-08's veto.
+- Counterfactuals on both levels isolate the load-bearing predicate
+  (OBS-QUIET / stripped bells).
