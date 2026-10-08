@@ -4,7 +4,7 @@ import type { TrsPlayState, TrsAction, RunRecord } from "../engine/trs/engine.js
 import type { CaseDefinition, Intervention, Observation, OutcomePredicate } from "../engine/trs/types.js";
 import { LEVELS } from "../content/levels/index.js";
 import { RoomClient } from "./net/roomClient.js";
-import { trsAudio } from "./audio.js";
+import { trsAudio, type TrsCue } from "./audio.js";
 
 const engine = new TrsEngine();
 
@@ -38,11 +38,23 @@ export function App() {
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [netErr, setNetErr] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [solvedIds, setSolvedIds] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem("trs-solved") ?? "[]"); } catch { return []; }
+  });
+  useEffect(() => {
+    if (state.solved && !solvedIds.includes(levelId)) {
+      const next = [...solvedIds, levelId];
+      setSolvedIds(next);
+      try { localStorage.setItem("trs-solved", JSON.stringify(next)); } catch { /* private mode */ }
+    }
+  }, [state.solved, solvedIds, levelId]);
 
   const cueFor = (a: TrsAction, s: TrsPlayState) => {
     const last = s.runs[s.runs.length - 1];
     switch (a.type) {
-      case "SetIntervention": trsAudio.play("intervention.place"); break;
+      case "SetIntervention":
+        trsAudio.play(a.intervention.kind === "SetValve" ? "valve.turn" : "intervention.place"); break;
       case "TestRun": trsAudio.play("trolley.roll"); break;
       case "AcceptResult": if (s.solved) trsAudio.play("case.close"); break;
       case "Undo": trsAudio.play("ui.tick"); break;
@@ -81,7 +93,7 @@ export function App() {
 
   const begin = (id: string) => {
     const e = LEVELS.find(x => x.id === id)!;
-    setLevelId(id); setState(engine.createInitialState(e.def)); setViewing(null); setScreen("case");
+    setLevelId(id); setState(engine.createInitialState(e.def)); setViewing(null); setHintsUsed(0); setScreen("case");
   };
   const act = (a: TrsAction) => {
     if (net.current) { net.current.client.command(a); return; }
@@ -119,6 +131,7 @@ export function App() {
       <div className="levelgrid">{LEVELS.map(l =>
         <button key={l.id} className="levelcard" onClick={() => begin(l.id)}>
           <strong>{l.id}</strong><span>{l.def.title}</span>
+          {solvedIds.includes(l.id) && <span className="badge ok">solved</span>}
         </button>)}</div></div>;
 
   const level = entry.def;
@@ -165,7 +178,7 @@ export function App() {
           <button className="primary" disabled={!(last?.evaluation.success && last.withinBudget)}
             onClick={() => act({ type: "AcceptResult" })}>Present findings</button>
         </div>
-        {last && <div className={`verdict ${last.evaluation.success ? "pass" : "fail"}`}>
+        {last && <div className={`verdict ${last.evaluation.success ? "pass" : "fail"}`} data-hints-used={hintsUsed}>
           {last.evaluation.success ? "All evidence supports the account." : "The account does not hold."}
           {!last.evaluation.success && (() => {
             const failed = [...last.evaluation.observations, ...last.evaluation.outcomes]
@@ -178,12 +191,13 @@ export function App() {
               : null;
           })()}
           {last.budgetNote && <div>{last.budgetNote}</div>}
+          {hintsUsed > 0 && <div className="why">hints used: {hintsUsed}/{level.hints.length}</div>}
           <button className="link" onClick={() => setViewing(viewing === null ? state.runs.length - 1 : null)}>
             {viewing === null ? "Step through timeline" : "Hide timeline"}</button>
         </div>}
         {viewing !== null && state.runs[viewing] &&
           <TimelineView beats={state.runs[viewing].timeline.beats} />}
-        <h3>Hints</h3><HintLadder hints={[...level.hints]} />
+        <h3>Hints</h3><HintLadder hints={[...level.hints]} onReveal={setHintsUsed} />
       </aside>
     </div>
   </div>;
@@ -219,7 +233,29 @@ function InterventionPanel({ level, state, act }: { level: CaseDefinition; state
 
 function SceneView({ level, run, state }: { level: CaseDefinition; run: RunRecord | undefined; state: TrsPlayState }) {
   const [beat, setBeat] = useState(0);
-  useEffect(() => setBeat(0), [run]);
+  const [playSpeed, setPlaySpeed] = useState<0 | 1 | 2 | 4>(0);
+  useEffect(() => { setBeat(0); setPlaySpeed(0); }, [run]);
+  // Diegetic beat cues: the replay audibly re-plays each beat's evidence
+  // (bell strikes, skids, toy ratchets, ruined cargo) on step/scrub/autoplay.
+  const CUE_FOR: Record<string, TrsCue> = {
+    BellRing: "bell.ring", Skid: "cobble.splash",
+    ToyStrike: "toy.windup", CargoRuined: "cargo.ruin",
+  };
+  useEffect(() => {
+    if (!run) return;
+    (run.timeline.beats[beat]?.events ?? []).forEach((e, i) => {
+      const cue = CUE_FOR[e.type];
+      if (cue) trsAudio.play(cue, `${e.type}:${e.entityId}:${beat}:${i}`);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [beat, run]);
+  const beats0 = run?.timeline.beats ?? [];
+  useEffect(() => {
+    if (!playSpeed || !run) return;
+    const id = setInterval(() => setBeat(b => b + 1), playSpeed === 1 ? 700 : playSpeed === 2 ? 350 : 175);
+    return () => clearInterval(id);
+  }, [playSpeed, run]);
+  useEffect(() => { if (beat >= beats0.length - 1) setPlaySpeed(0); }, [beat, beats0.length]);
   const beats = run?.timeline.beats ?? [];
   const snap: Record<string, Record<string, unknown>> =
     (run && beats[beat]?.entityStates) ||
@@ -258,9 +294,17 @@ function SceneView({ level, run, state }: { level: CaseDefinition; run: RunRecor
         <text key={i} x="12" y={340 - i * 14} fontSize="11" fill="#ffd97a">{`b${beats[beat]?.beat}: ${ev.type} ${ev.entityId ?? ""}`}</text>)}
     </svg>
     {run && <div className="scrub">
+      <button aria-label="rewind" onClick={() => { setPlaySpeed(0); setBeat(0); }}>⏮</button>
       <button onClick={() => setBeat(Math.max(0, beat - 1))}>◀</button>
-      <input type="range" min={0} max={beats.length - 1} value={beat} onChange={e => setBeat(+e.target.value)} aria-label="beat" />
+      <input type="range" min={0} max={beats.length - 1} value={beat} onChange={e => { setPlaySpeed(0); setBeat(+e.target.value); }} aria-label="beat" />
       <button onClick={() => setBeat(Math.min(beats.length - 1, beat + 1))}>▶</button>
+      <button className={playSpeed ? "on" : ""}
+        onClick={() => setPlaySpeed(playSpeed ? 0 : 1)}
+        aria-label={playSpeed ? "pause" : "play"}>{playSpeed ? "⏸" : "▶"}</button>
+      <button className={playSpeed === 2 ? "on" : ""}
+        onClick={() => setPlaySpeed(playSpeed === 2 ? 0 : 2)} aria-label="play 2x">2×</button>
+      <button className={playSpeed === 4 ? "on" : ""}
+        onClick={() => setPlaySpeed(playSpeed === 4 ? 0 : 4)} aria-label="play 4x">4×</button>
       <span>beat {beats[beat]?.beat ?? 0}/{beats.length ? beats[beats.length - 1]?.beat ?? 0 : 0}</span>
     </div>}
   </div>;
@@ -271,11 +315,11 @@ function TimelineView({ beats }: { beats: { beat: number; events: { type: string
     <li key={b.beat}><b>{b.beat}</b> {b.events.map(e => e.type).join(", ") || "—"}</li>)}</ol>;
 }
 
-function HintLadder({ hints }: { hints: string[] }) {
+function HintLadder({ hints, onReveal }: { hints: string[]; onReveal?: (n: number) => void }) {
   const [n, setN] = useState(0);
   return <div className="hints">
     {hints.slice(0, n).map((h, i) => <p key={i} className="hint">{h}</p>)}
-    {n < hints.length && <button className="link" onClick={() => setN(n + 1)}>Reveal hint {n + 1}/{hints.length}</button>}
+    {n < hints.length && <button className="link" onClick={() => { const m = n + 1; setN(m); onReveal?.(m); }}>Reveal hint {n + 1}/{hints.length}</button>}
   </div>;
 }
 

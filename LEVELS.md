@@ -554,3 +554,64 @@ their cards should be read as "the discovery space is the level."
 - TRS-05 OBS-S-VIS (+1) and TRS-04 OBS-CLOCK (+2) are near-vacuous seals —
   fine, but if either level ever feels under-constrained in playtest, the
   leak runs through these facts.
+
+---
+
+## TRS systems card (Part 4 audit, 2026-10-08)
+
+The bible's §4.x checklist asks for a written systems card: verb/noun
+inventory, interaction matrix, resolution order, veto rules. Recorded here
+from `src/engine/trs/sim.ts` + `types.ts` (frozen engine — this documents
+what exists, it defines nothing new).
+
+### Verbs (5 intervention kinds — finite, enumerable)
+
+| verb | target | effect | in minimal solves |
+|---|---|---|---|
+| RedirectJunction | junction | swaps whole route of actors on `controlsRouteOf` (last-wins) | 11/12 levels |
+| PlaceAndArmToy | socket | 4-step path; strikes at step 4; parked toy re-rings every beat ≥4 | 8/12 |
+| SetValve | fountain/pump | wet surface → dry (positions unchanged) | 5/12 |
+| SetMechanismDelay | `armed:true` entity | +n beats to schedule | 2/12 |
+| RepositionProp | prop | sets `locationId` only | **0/12 — trap-only verb** |
+
+RepositionProp is deliberately never load-bearing: it exists as the
+authored "label-edit" lure (parcel decal, canvas screen, buffer crate) —
+the object lesson that the record constrains routes and events, never
+props. Keep it; do not "fix" it by forcing it into a solve.
+
+### Nouns
+routes (wet/dry), waypoints (crossingId/isDestination/skidHazard/
+adjacentBellId), actors (route + optional cargoField + startBeat),
+sockets (accepts + linkedBellId), surfaces (wet via valves/pumps),
+predicates (sealedObservations + desiredOutcomes + interventionBudget).
+
+### Interaction matrix (verb × consequence class)
+- RedirectJunction → re-times AND re-routes: every waypoint consequence of
+  the inherited road transfers (crossings, skids, rings, arrivals). The
+  vacated route is open for another actor (re-let-the-street idiom).
+- PlaceAndArmToy → fixed consequence: one ring at step-4 beat + open-ended
+  re-ring tail (vetoed by EventAbsent seals — TRS-08/12 teach this).
+- SetValve → removes ALL events on its hazard tiles: skid+ring+ruin die
+  together (shared-pump levels make this a multi-fact kill — TRS-09/12).
+- SetMechanismDelay → shifts an entity's whole schedule; consequences
+  re-time, never vanish (TRS-03's compress alternates live here).
+- RepositionProp → none on the record (by design — the lure's teaching).
+
+### Resolution order per beat (sim.ts, verbatim phases)
+1. Actuators: `scheduledBeat` → Activated; armed+delayed → `delayedUntil`.
+2. Movement: actors advance 1 waypoint in declaration order (Moved →
+   Crossing → Arrived per actor); then armed toys step (ToyStep).
+3. Contact: per actor in order — wet skidHazard → Skid → BellRing
+   (rungAt) → CargoRuined (if cargoField); then toy strikes: BellRing →
+   ToyStrike.
+4. Bounded propagation: 16-hop cap for declared triggers (reserved).
+5. Snapshot `entityStates` for the beat.
+
+### Veto rules
+- RedirectJunction: last-wins per controlsRouteOf (TRS-11's resource
+  conflict is this rule taught explicitly).
+- EventAbsent / EventCount seals veto legal-but-wrong consequence
+  shapes (parked toy's re-ring; double skids).
+- Budget vetoes otherwise-valid plans (TRS-05's two gated near-misses).
+- Timing vetoes: adjacentBellId rings at the SKID's beat — a retimed skid
+  re-times the ring (TRS-03 trap).

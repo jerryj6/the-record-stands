@@ -35,3 +35,11 @@ li.pass{color:#9fd69f}li.fail{color:#e08a7a}
 
 .title-art{max-width:340px;width:70%;border-radius:12px;border:1px solid #4a4238;margin:0 auto 18px;display:block}
 li .why{font-size:12px;opacity:.85;margin:2px 0 4px;font-style:italic}
+@keyframes stampIn{from{transform:scale(1.35) rotate(-3deg);opacity:0}to{transform:none;opacity:1}}
+.verdict{animation:stampIn .15s ease-out}
+@media (prefers-reduced-motion:reduce){.verdict{animation:none}}
+
+.verdict .link{display:block;margin-top:4px}
+
+aside li.pass::before{content:"\2713\0020"}
+aside li.fail::before{content:"\2717\0020"}

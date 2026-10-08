@@ -8,6 +8,7 @@ export type TrsCue =
   | "toy.windup"
   | "fountain.spray"
   | "cobble.splash"
+  | "cargo.ruin"
   | "trolley.roll"
   | "valve.turn"
   | "intervention.place"
@@ -49,6 +50,10 @@ const CUES: Record<TrsCue, Voice[]> = {
   "cobble.splash": [
     { kind: "noise", freq: 0, gain: 0.14, decay: 0.18, filter: 1600 },
     { kind: "sine", freq: 220, freqEnd: 110, gain: 0.08, decay: 0.12 },
+  ],
+  "cargo.ruin": [
+    { kind: "noise", freq: 0, gain: 0.12, decay: 0.15, filter: 2000 },
+    { kind: "triangle", freq: 160, freqEnd: 80, gain: 0.09, decay: 0.3 },
   ],
   "trolley.roll": [
     { kind: "triangle", freq: 90, gain: 0.1, decay: 0.3 },

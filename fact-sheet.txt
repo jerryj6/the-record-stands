@@ -1,0 +1,29 @@
+FACT SHEET — THE RECORD STANDS
+================================
+
+Title:        The Record Stands (TRS)
+Game ID:      the-record-stands
+Tagline:      Intervene on a recorded morning so every sealed observation
+              of the disaster still holds — with the cause you chose.
+Genre:        Sealed-observation causality puzzle (browser)
+Players:      1 solo campaign; 2–4 live co-op rooms (lockstep, deterministic)
+Platform:     Browser (desktop, mouse+keyboard; reduced-motion honored)
+Tech:         React + Vite client, PixiJS scene, pure deterministic TS
+              engine, Node ws room server, generated art, procedural
+              WebAudio cues (no samples).
+Session:      A case takes ~5–15 minutes; 12 authored cases (TRS-01..12)
+              plus optional mastery extras.
+Team:         Built under the AI Skills Studio Challenge three-game
+              production (with Return by Midnight and Please Forward the
+              Town).
+Status:       Engine + content complete and green (392 unit/depth tests);
+              release gates G0–G5 not yet run. G5 = human playtest signoff
+              (open — scripted playtests only so far).
+Run:          npm ci && npm run build && npm start   (site + rooms :10000)
+Dev:          npm run dev (client) · npm run dev:server (rooms)
+Controls:     Mouse: pick interventions, run simulation, step/scrub/
+              auto-play the replay timeline. Keyboard: tab navigation.
+Known limits: no mid-level save; solo playtest evidence is scripted;
+              co-op needs the ws server.
+Link:         <deployment URL TBD — fill at ship time>
+Contact:      <monitored email TBD>
