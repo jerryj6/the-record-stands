@@ -60,6 +60,18 @@ export function App() {
     }
   }, [state.solved, solvedIds, levelId]);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      const back: Record<Screen, Screen | null> =
+        { title: null, select: "title", lobby: "title", credits: "title", case: "select" };
+      const dest = back[screen];
+      if (dest) setScreen(dest);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [screen]);
+
   const cueFor = (a: TrsAction, s: TrsPlayState) => {
     const last = s.runs[s.runs.length - 1];
     switch (a.type) {
