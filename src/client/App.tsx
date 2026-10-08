@@ -222,7 +222,10 @@ function InterventionPanel({ level, state, act }: { level: CaseDefinition; state
 
   return <ul className="sockets">{options.map(o => {
     const cur = state.config[o.slotKey];
-    const active = !!cur;
+    const active = !!cur && cur.kind === o.iv.kind &&
+      (cur as { toRouteId?: string }).toRouteId === (o.iv as { toRouteId?: string }).toRouteId &&
+      (cur as { entityId?: string }).entityId === (o.iv as { entityId?: string }).entityId &&
+      (cur as { socketId?: string }).socketId === (o.iv as { socketId?: string }).socketId;
     const cost = level.interventionCosts[o.iv.kind] ?? 1;
     return <li key={o.slotKey}>
       <button className={active ? "on" : ""}
