@@ -108,6 +108,11 @@ export function applyInterventionsToSetup(
         }
         ctx.toyRoute.set(iv.toyId, steps);
         ctx.actorPos.set(iv.toyId, -1);
+        // Spawn the toy runtime entity if the level doesn't predeclare one —
+        // a socket arms a generic wind-up toy unless content says otherwise.
+        if (!ctx.entities.has(iv.toyId)) {
+          ctx.entities.set(iv.toyId, { entityId: iv.toyId, fields: { kind: "windUpToy", position: socket.locationId } });
+        }
         setField(ctx, iv.toyId, "armed", true);
         setField(ctx, iv.toyId, "socketId", iv.socketId);
         break;
