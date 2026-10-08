@@ -38,11 +38,20 @@ export function App() {
   const net = useRef<{ client: RoomClient; levelId: string } | null>(null);
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [netErr, setNetErr] = useState<string | null>(null);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(() => {
+    try { const m = localStorage.getItem("trs-muted") === "1"; if (m) trsAudio.setMuted(true); return m; } catch { return false; }
+  });
   const [hintsUsed, setHintsUsed] = useState(0);
   const [solvedIds, setSolvedIds] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem("trs-solved") ?? "[]"); } catch { return []; }
   });
+  const acceptedConfig = useRef<TrsPlayState["config"] | null>(null);
+  useEffect(() => {
+    if (state.solved && acceptedConfig.current === null) acceptedConfig.current = state.config;
+    if (!state.solved) acceptedConfig.current = null;
+  }, [state.solved, state.config]);
+  const superseded = state.solved && acceptedConfig.current !== null &&
+    JSON.stringify(acceptedConfig.current) !== JSON.stringify(state.config);
   useEffect(() => {
     if (state.solved && !solvedIds.includes(levelId)) {
       const next = [...solvedIds, levelId];
@@ -161,10 +170,11 @@ export function App() {
       <h2>{level.levelId.toUpperCase()}: {level.title}</h2>
       {KEY_QUESTIONS[level.levelId.toUpperCase()] && <p className="keyq">{KEY_QUESTIONS[level.levelId.toUpperCase()]}</p>}
       <span className={`badge ${state.solved ? "ok" : ""}`}>
-        {state.solved ? "Case closed" : `Budget ${used}/${level.interventionBudget}`}</span>
+        {state.solved ? (superseded ? "Case closed — plan modified" : "Case closed") : `Budget ${used}/${level.interventionBudget}`}</span>
       {roomCode && <span className="badge">Room {roomCode}</span>}
       {netErr && <p className="fail">{netErr}</p>}
-      <button className="link" onClick={() => { const m = !muted; trsAudio.setMuted(m); setMuted(m); }}>
+      <button className="link" onClick={() => { const m = !muted; trsAudio.setMuted(m); setMuted(m);
+        try { localStorage.setItem("trs-muted", m ? "1" : "0"); } catch { /* private mode */ } }}>
         {muted ? "Sound off" : "Sound on"}</button>
     </header>
     <div className="casebody">
@@ -198,6 +208,7 @@ export function App() {
         </div>
         {state.solved && <div className="ending" data-ending={levelId}>
           <h3>The record stands. Case closed.</h3>
+          {superseded && <p className="why">The plan has changed since the archive accepted it — this verdict no longer describes the board.</p>}
           <p>{level.title} — the archive accepts your account.</p>
           {levelId === "TRS-12"
             ? <p className="why">Every file in the archive now reads true. The night clerk stamps the last ledger: the town's twelve accounts all hold — and you are why.</p>
