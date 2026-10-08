@@ -51,20 +51,20 @@ test("two players build one machine in relay and see the same run", async ({ bro
   expect(clipped).toEqual([]);
 
   await dragPart(host, "ramp", 7, 6);
-  for (const x of [10, 11, 12, 13]) await dragPart(host, "domino", x, 10);
-  await expect.poll(() => placements(guest)).toBe(5);
+  for (const x of [8, 9, 10, 11, 12, 13]) await dragPart(host, "domino", x, 10);
+  await expect.poll(() => placements(guest)).toBe(7);
 
   // the guest cannot build in the host's stretch
   const { a, b } = await guest.evaluate(() => {
     const s = (window as unknown as { __trsStage: { slot(k: string): { x: number; y: number }; cell(x: number, y: number): { x: number; y: number } } }).__trsStage;
-    return { a: s.slot("domino"), b: s.cell(9.5, 11) };
+    return { a: s.slot("domino"), b: s.cell(6.5, 11) };
   });
   await guest.mouse.move(a.x, a.y); await guest.mouse.down(); await guest.mouse.move(b.x, b.y, { steps: 8 }); await guest.mouse.up();
   await expect(guest.getByText("That stretch belongs to your partner.")).toBeVisible();
-  expect(await placements(guest)).toBe(5);
+  expect(await placements(guest)).toBe(7);
 
   await dragPart(guest, "domino", 14, 10);
-  await expect.poll(() => placements(host)).toBe(6);
+  await expect.poll(() => placements(host)).toBe(8);
   await shot(host, "coop-host-built");
   await shot(guest, "coop-guest-built");
 

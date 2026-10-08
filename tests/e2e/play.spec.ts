@@ -43,7 +43,7 @@ test.describe("solo slice", () => {
     test.setTimeout(90000);
     await openLevel(page, "Through the Arch");
     await dragPart(page, "ramp", 7, 6);
-    for (const x of [10, 11, 12, 13, 14]) await dragPart(page, "domino", x, 10);
+    for (const x of [8, 9, 10, 11, 12, 13, 14]) await dragPart(page, "domino", x, 10);
     await page.getByRole("button", { name: "2×" }).click();
     await page.getByRole("button", { name: "Play", exact: true }).click();
     await expect(page.getByText("The record stands.")).toBeVisible({ timeout: 60000 });

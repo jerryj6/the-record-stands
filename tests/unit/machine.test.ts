@@ -7,7 +7,7 @@ import type { MachineLevel, PartKind, Placement } from "../../src/engine/machine
 
 const P = (id: string, kind: PartKind, gx: number, gy: number, flip = false): Placement => ({ id, kind, gx, gy, flip });
 
-const L3_SOLUTION = [P("a", "ramp", 7, 6), P("d1", "domino", 10, 10), P("d2", "domino", 11, 10), P("d3", "domino", 12, 10), P("d4", "domino", 13, 10), P("d5", "domino", 14, 10)];
+const L3_SOLUTION = [P("a", "ramp", 7, 6), P("d0", "domino", 8, 10), P("d00", "domino", 9, 10), P("d1", "domino", 10, 10), P("d2", "domino", 11, 10), P("d3", "domino", 12, 10), P("d4", "domino", 13, 10), P("d5", "domino", 14, 10)];
 
 function legal(level: MachineLevel, pl: Placement[]): void {
   pl.forEach((p, i) => expect(canPlace(level, pl.slice(0, i), p.kind, p.gx, p.gy, p.flip), `${p.id}`).toEqual({ ok: true }));

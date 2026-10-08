@@ -28,7 +28,7 @@ describe("puzzle depth (not trivially solvable)", () => {
   it("level 3 relay: the left stretch alone cannot finish — the chain must cross into the right stretch", () => {
     const left = [
       { id: "a", kind: "ramp" as const, gx: 7, gy: 6, flip: false },
-      ...[10, 11, 12, 13].map((gx, i) => ({ id: `d${i}`, kind: "domino" as const, gx, gy: 10, flip: false })),
+      ...[8, 9, 10, 11, 12, 13].map((gx, i) => ({ id: `d${i}`, kind: "domino" as const, gx, gy: 10, flip: false })),
     ];
     expect(runMachine(L3, left).verdict.success).toBe(false);
     expect(runMachine(L3, [...left, { id: "d9", kind: "domino", gx: 14, gy: 10, flip: false }]).verdict.success).toBe(true);

@@ -8,6 +8,8 @@ import {
 const TOL = C / 64;
 const LAUNCH = 1500;
 const TOY_V = 128;
+/** A wind-up toy runs down after this many steps (~11 cells). */
+const TOY_WIND = 720;
 const TROLLEY_V = 300;
 const LEVER_HALF = 2 * C - C / 8;
 const LEVER_RISE = 3072;
@@ -343,9 +345,13 @@ function stepMarble(world: World, st: SimState, m: MarbleState): void {
     else {
       const a = t((G * (seg.y1 - seg.y0)) / seg.len);
       m.s += a;
-      if (st.tick % 3 === 0 || Math.abs(m.s) < 8) {
-        if (m.s > 0) m.s = Math.max(0, m.s - FRICTION);
-        else if (m.s < 0) m.s = Math.min(0, m.s + FRICTION);
+      // cobbled street floor drags more than smooth ledges; slow marbles settle quickly
+      const street = seg.owner.startsWith("ground:") && seg.y0 >= (world.level.rows - 2) * C - R - 1;
+      const slow = Math.abs(m.s) < 120 && a === 0;
+      if (slow || street || st.tick % 3 === 0 || Math.abs(m.s) < 8) {
+        const f = slow ? 3 * FRICTION : FRICTION;
+        if (m.s > 0) m.s = Math.max(0, m.s - f);
+        else if (m.s < 0) m.s = Math.min(0, m.s + f);
       }
       m.s = Math.max(-VMAX, Math.min(VMAX, m.s));
       const nd = m.d + m.s;
@@ -570,6 +576,7 @@ function stepToy(world: World, st: SimState, toy: ToyState): void {
     return;
   }
   if (!groundAt(world, toy.x, toy.y)) { toy.mode = "air"; toy.vy = 0; return; }
+  if (toy.step >= TOY_WIND) { toy.mode = "stop"; return; }
   const nx = toy.x + toy.dir * TOY_V;
   if (toyBlocked(world, st, toy, toyBox(toy, nx))) { toy.mode = "stop"; return; }
   toy.mode = "walk";

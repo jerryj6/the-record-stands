@@ -76,13 +76,13 @@ export const L3: MachineLevel = {
   fixed: [
     { id: "chute", kind: "chute", gx: 1, gy: 2, vx: 260, vy: 0 },
     { id: "square", kind: "bell", gx: 9, gy: 6, label: "Square bell" },
-    { id: "tower", kind: "bell", gx: 4, gy: 10, label: "Tower bell" },
+    { id: "tower", kind: "bell", gx: 5, gy: 10, label: "Tower bell" },
     { id: "brake", kind: "lever", gx: 16, gy: 11, flip: true, link: "trolley", label: "Trolley brake" },
     { id: "trolley", kind: "trolley", gx: 20, gy: 10, held: true, label: "Cake trolley" },
     { id: "arch", kind: "arch", gx: 24, gy: 8, label: "Parade arch" },
     { id: "buffer", kind: "buffer", gx: 31, gy: 11 },
   ],
-  inventory: { ramp: 2, domino: 6, bucket: 1, toy: 1 },
+  inventory: { ramp: 2, domino: 8, bucket: 1, toy: 1 },
   stamps: [
     { id: "s1", label: "SQUARE BELL RINGS", kind: "ring", target: "square" },
     { id: "s2", label: "TOWER BELL RINGS", kind: "ring", target: "tower" },
@@ -97,7 +97,33 @@ export const L3: MachineLevel = {
   hint: "The brake lever lets the trolley go. Topple something onto its high end.",
 };
 
-export const MACHINE_LEVELS: readonly MachineLevel[] = [L1, L2, L3];
+
+export const L4: MachineLevel = {
+  id: "gala-04",
+  number: 4,
+  title: "The Wind-up Parade",
+  brief: "No marble is moving. Wind up the toy and let the parade ring the bell.",
+  cols: 28,
+  rows: 14,
+  terrain: [{ x: 0, y: FLOOR_ROW, w: 28, h: 2 }],
+  fixed: [
+    { id: "brake", kind: "lever", gx: 17, gy: 11, flip: true, link: "drop", label: "Drop latch" },
+    { id: "drop", kind: "chute", gx: 24, gy: 1, held: true, vx: 0, vy: 0 },
+    { id: "bell", kind: "bell", gx: 20, gy: 5, label: "Parade bell" },
+    { id: "cake", kind: "cake", gx: 24, gy: 10, label: "Gala cake" },
+  ],
+  inventory: { toy: 1, domino: 4, ramp: 1 },
+  stamps: [{ id: "s1", label: "PARADE BELL RINGS", kind: "ring", target: "bell" }],
+  stretches: [0, 14, 28],
+  maxTicks: 2400,
+  decor: [
+    { kind: "stall", gx: 7, gy: 9 },
+    { kind: "lampTall", gx: 21, gy: 9 },
+  ],
+  hint: "The toy can knock dominoes. The last domino has to reach the latch.",
+};
+
+export const MACHINE_LEVELS: readonly MachineLevel[] = [L1, L2, L3, L4];
 export function machineLevel(id: string): MachineLevel {
   return MACHINE_LEVELS.find((l) => l.id === id) ?? L1;
 }
