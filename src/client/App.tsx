@@ -21,9 +21,11 @@ const pos = (id?: string) => POS[id ?? ""] ?? [60 + (id ?? "").length * 37 % 520
 // Generated-art sprites for entity kinds (art/sprites/props cut from trs-prop-sheet);
 // kinds not listed fall back to primitives until their sheets ship.
 const ENTITY_SPRITE: Record<string, string> = {
-  bell: "trs-prop-sheet-00.png",
-  junction: "trs-prop-sheet-03.png",
-  destination: "trs-prop-sheet-08.png",
+  bell: "props/trs-prop-sheet-00.png",
+  junction: "props/trs-prop-sheet-03.png",
+  destination: "props/trs-prop-sheet-08.png",
+  arch: "env/trs-env-kit-05.png",
+  fixture: "env/trs-env-kit-07.png",
 };
 
 export function App() {
@@ -209,17 +211,22 @@ function SceneView({ level, run, state }: { level: CaseDefinition; run: RunRecor
         fill="none" stroke={r.routeId.includes("wet") ? "#4a7dbb" : "#8a7d5c"} strokeWidth="3" strokeDasharray="6 4" />)}
       {level.entities.filter(e => !["trolley", "windUpToy"].includes(e.kind)).map(e => {
         const [x, y] = pos(String(e.initial.position));
-        const spr = ENTITY_SPRITE[e.kind];
+        const spr = e.kind === "fountain"
+          ? (snap[e.entityId]?.running === true ? "env/trs-env-kit-00.png" : "env/trs-env-kit-01.png")
+          : ENTITY_SPRITE[e.kind];
+        const big = e.kind === "fountain" || e.kind === "arch";
+        const w = big ? 60 : 44, hgt = big ? 64 : 40, dx = big ? 30 : 22, dy = big ? 52 : 30;
         return <g key={e.entityId}>
           {spr
-            ? <image href={`/assets/sprites/props/${spr}`} x={x - 22} y={y - 30} width="44" height="40" preserveAspectRatio="xMidYMax meet" />
+            ? <image href={`/assets/sprites/${spr}`} x={x - dx} y={y - dy} width={w} height={hgt} preserveAspectRatio="xMidYMax meet" />
             : <circle cx={x} cy={y} r="9" fill={e.kind === "bell" ? "#c9a227" : e.kind === "destination" ? "#b06a4a" : "#5a8a5a"} />}
-          <text x={x} y={y - 34} textAnchor="middle" fontSize="10" fill="#e8e2d4">{e.name}</text></g>;
+          <text x={x} y={y - dy - 4} textAnchor="middle" fontSize="10" fill="#e8e2d4">{e.name}</text></g>;
       })}
       {level.actors.map(a => {
         const [x, y] = entityPos(a.entityId);
-        return <g key={a.entityId}><rect x={x - 8} y={y - 8} width="16" height="16" rx="3" fill="#b03a2e" />
-          <text x={x} y={y - 14} textAnchor="middle" fontSize="10" fill="#ffd97a">{a.entityId}</text></g>;
+        return <g key={a.entityId}>
+          <image href="/assets/sprites/env/trs-env-kit-04.png" x={x - 18} y={y - 24} width="36" height="30" preserveAspectRatio="xMidYMax meet" />
+          <text x={x} y={y - 28} textAnchor="middle" fontSize="10" fill="#ffd97a">{a.entityId}</text></g>;
       })}
       {Object.values(state.config).filter(iv => iv.kind === "PlaceAndArmToy").map((iv, i) => {
         const s = level.sockets.find(s2 => s2.socketId === (iv as { socketId: string }).socketId);
