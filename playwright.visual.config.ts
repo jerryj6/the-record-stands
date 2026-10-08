@@ -1,8 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
-// Visual baselines: screenshots of the title screen, case select, and
-// the TRS-01 scene. First run writes baselines under
-// tests/e2e/visual.spec.ts-snapshots; later runs diff against them.
+// HUD layout guard: no clipped or overlapping labels at 1280x800 and 390x844.
+// (Pixel baselines were retired with the rework — they accepted glitches.)
 export default defineConfig({
   testDir: "tests/e2e",
   testMatch: "visual.spec.ts",

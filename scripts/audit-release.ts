@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { LEVELS } from "../src/content/levels/index.js";
+import { MACHINE_LEVELS as LEVELS } from "../src/content/machine/levels.js";
 
 const checks: [string, boolean][] = [
   ["12 main levels authored", (LEVELS as readonly unknown[]).length === 12],

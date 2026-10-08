@@ -1,11 +1,11 @@
 # The Record Stands
 
-A browser puzzle game — sealed-observation causality puzzle.
+A browser contraption puzzle. The gala disaster happened — rebuild it so every witness is still right and the cake survives, using a live chain reaction you build by hand.
 
-Intervene on a recorded morning: reroute junctions, arm wind-up toys, set valves — so every sealed observation of the disaster still holds, with the cause you chose.
+Drag ramps, dominoes, seesaws, buckets and wind-up toys onto a pop-up-book cross-section of the town, press **Play**, and watch the deterministic chain reaction. Fixed witness stamps ("BELL RINGS", "TROLLEY PASSES ARCH") must all light, in order, and the cake must survive. See `docs/DECISIONS.md` (owner concept-rework decision 2026-10-08).
 
-- **12 authored main levels** (solo campaign) + optional mastery extras
-- **Live 2–4 player co-op**: host a room, share the code; every command resolves on the authoritative server and replays deterministically on every client
+- **Vertical slice:** levels 1–3 playable solo (12 main levels planned)
+- **Relay co-op (2–4):** start a room, share the code; each player builds their own stretch, everyone presses Ready, and the server-committed run plays identically on every screen
 - Generated art (per-game art bible) + procedural WebAudio cues
 
 ## Run
@@ -27,9 +27,11 @@ npm run verify:production --url https://<deployed> --sha <commit>
 
 ## Layout
 
-- `src/engine` — pure deterministic rules (no DOM/network/time)
-- `src/content/levels` — 12 authored levels + LevelCards (TRS-01 … TRS-12)
-- `src/client` — React UI · `src/server` — ws room server
+- `src/engine/machine` — integer tick-based contraption sim + build reducer (no DOM/network/time)
+- `src/content/machine/levels.ts` — slice levels 1–3
+- `src/client/game` — PixiJS 8 full-window scene (Stage, procedural art, sound) · `src/client/App.tsx` — React menus/HUD
+- `src/server` — ws room server; `trs-adapter.ts` holds the shared build state
+- `scripts/trace-machine.ts`, `scripts/search-machine.ts` — level design tools (trace a run, brute-force one-part builds)
 - `public/assets` — generated art (sprites/, covers, materials); `art/manifests/assets.json`
 - `docs/` — MASTER-HANDOFF (binding contract), REQUIREMENTS, DECISIONS, AUDIO-MANIFEST, PLAYTEST-KIT
 - `evidence/INDEX.md` — verification evidence index

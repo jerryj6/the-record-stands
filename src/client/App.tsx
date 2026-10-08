@@ -1,396 +1,377 @@
-import { useEffect, useRef, useState } from "react";
-import { TrsEngine } from "../engine/trs/engine.js";
-import type { TrsPlayState, TrsAction, RunRecord } from "../engine/trs/engine.js";
-import type { CaseDefinition, Intervention, Observation, OutcomePredicate } from "../engine/trs/types.js";
-import { LEVELS } from "../content/levels/index.js";
-import { KEY_QUESTIONS } from "../content/level-cards.js";
-import { RoomClient } from "./net/roomClient.js";
-import { trsAudio, type TrsCue } from "./audio.js";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { MACHINE_LEVELS, machineLevel } from "../content/machine/levels";
+import { applyBuild, initialBuild, rangeFor, validateBuild, type BuildCommand, type BuildState } from "../engine/machine/editor";
+import type { Verdict } from "../engine/machine/types";
+import { Stage, type Layout } from "./game/Stage";
+import { isMuted, setMuted, sfx } from "./game/sound";
+import { RoomClient } from "./net/roomClient";
 
-const engine = new TrsEngine();
+type Screen = "title" | "levels" | "play";
+type StampState = "dark" | "lit" | "wrong";
+interface Member { actorId: string; seat: number; connected: boolean }
 
-type Screen = "title" | "select" | "case" | "lobby" | "credits";
+const SOLVED_KEY = "trs-machine-solved";
+function loadSolved(): string[] {
+  try { return JSON.parse(localStorage.getItem(SOLVED_KEY) ?? "[]") as string[]; } catch { return []; }
+}
+function saveSolved(ids: string[]): void {
+  try { localStorage.setItem(SOLVED_KEY, JSON.stringify(ids)); } catch { /* private mode */ }
+}
 
-const POS: Record<string, [number, number]> = {
-  start: [40, 300], laneWest: [110, 250], fountainEdge: [210, 220], bellCorner: [310, 190],
-  arch: [420, 180], destination: [540, 170],
-  arcadeWest: [110, 320], arcadeMid: [220, 330], arcadeEast: [330, 320],
-  squareCenter: [250, 120], tray: [80, 60],
-};
-const pos = (id?: string) => POS[id ?? ""] ?? [60 + (id ?? "").length * 37 % 520, 40 + (id ?? "").length * 53 % 300];
-
-// Generated-art sprites for entity kinds (art/sprites/props cut from trs-prop-sheet);
-// kinds not listed fall back to primitives until their sheets ship.
-const ENTITY_SPRITE: Record<string, string> = {
-  bell: "props/trs-prop-sheet-00.png",
-  junction: "props/trs-prop-sheet-03.png",
-  destination: "props/trs-prop-sheet-08.png",
-  arch: "env/trs-env-kit-05.png",
-  fixture: "env/trs-env-kit-07.png",
-};
+function useViewport(): { w: number; h: number } {
+  const [vp, setVp] = useState({ w: window.innerWidth, h: window.innerHeight });
+  useEffect(() => {
+    const on = (): void => setVp({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, []);
+  return vp;
+}
 
 export function App() {
   const [screen, setScreen] = useState<Screen>("title");
-  const [levelId, setLevelId] = useState<string>(LEVELS[0].id);
-  const entry = LEVELS.find(l => l.id === levelId)!;
-  const [state, setState] = useState<TrsPlayState>(() => engine.createInitialState(entry.def));
-  const [viewing, setViewing] = useState<number | null>(null);
-  const net = useRef<{ client: RoomClient; levelId: string } | null>(null);
-  const [roomCode, setRoomCode] = useState<string | null>(null);
-  const [netErr, setNetErr] = useState<string | null>(null);
-  const [muted, setMuted] = useState(() => {
-    try { const m = localStorage.getItem("trs-muted") === "1"; if (m) trsAudio.setMuted(true); return m; } catch { return false; }
-  });
-  const [hintsUsed, setHintsUsed] = useState(0);
-  const [solvedIds, setSolvedIds] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem("trs-solved") ?? "[]"); } catch { return []; }
-  });
-  const acceptedConfig = useRef<TrsPlayState["config"] | null>(null);
-  useEffect(() => {
-    if (state.solved && acceptedConfig.current === null) acceptedConfig.current = state.config;
-    if (!state.solved) acceptedConfig.current = null;
-  }, [state.solved, state.config]);
-  const superseded = state.solved && acceptedConfig.current !== null &&
-    JSON.stringify(acceptedConfig.current) !== JSON.stringify(state.config);
-  useEffect(() => {
-    if (state.solved && !solvedIds.includes(levelId)) {
-      const next = [...solvedIds, levelId];
-      setSolvedIds(next);
-      try { localStorage.setItem("trs-solved", JSON.stringify(next)); } catch { /* private mode */ }
-    }
-  }, [state.solved, solvedIds, levelId]);
+  const [build, setBuild] = useState<BuildState>(() => initialBuild(MACHINE_LEVELS[0]!.id));
+  const [solved, setSolved] = useState<string[]>(loadSolved);
+  const [online, setOnline] = useState(false);
+  const [roomCode, setRoomCode] = useState("");
+  const [joinCode, setJoinCode] = useState("");
+  const [members, setMembers] = useState<Member[]>([]);
+  const [myActor, setMyActor] = useState<string | null>(null);
+  const [mySeat, setMySeat] = useState<number | null>(null);
+  const [netError, setNetError] = useState("");
+  const [connecting, setConnecting] = useState(false);
+  const clientRef = useRef<RoomClient | null>(null);
+  const buildRef = useRef(build);
+  buildRef.current = build;
+  const membersRef = useRef(members);
+  membersRef.current = members;
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      const back: Record<Screen, Screen | null> =
-        { title: null, select: "title", lobby: "title", credits: "title", case: "select" };
-      const dest = back[screen];
-      if (dest) setScreen(dest);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [screen]);
+  const level = machineLevel(build.levelId);
+  const connectedCount = members.filter((m) => m.connected).length;
+  const range = online ? rangeFor(level, mySeat, connectedCount) : undefined;
 
-  const cueFor = (a: TrsAction, s: TrsPlayState) => {
-    const last = s.runs[s.runs.length - 1];
-    switch (a.type) {
-      case "SetIntervention":
-        trsAudio.play(a.intervention.kind === "SetValve" ? "valve.turn" : "intervention.place"); break;
-      case "TestRun": trsAudio.play("trolley.roll"); break;
-      case "AcceptResult": if (s.solved) trsAudio.play("case.close"); break;
-      case "Undo": trsAudio.play("ui.tick"); break;
-    }
-    if (a.type === "TestRun" && last) trsAudio.play(last.evaluation.success ? "record.verify" : "record.contradict");
-  };
+  const foldNet = useCallback((payload: unknown, actorId: string, events: unknown[]) => {
+    const cmd = payload as BuildCommand;
+    const lv = machineLevel(buildRef.current.levelId);
+    const seat = membersRef.current.find((m) => m.actorId === actorId)?.seat ?? null;
+    const r = rangeFor(lv, seat, membersRef.current.filter((m) => m.connected).length);
+    const start = events.some((e) => (e as { type?: string }).type === "run");
+    const next = applyBuild(buildRef.current, actorId, cmd, start, r);
+    buildRef.current = next;
+    setBuild(next);
+  }, []);
 
-  const fold = (payload: unknown) => {
-    // Lockstep: apply an accepted command payload through the local engine.
-    const cur = net.current;
-    const lvl = LEVELS.find(l => l.id === (cur?.levelId ?? levelId));
-    if (!lvl) return;
-    const a = payload as TrsAction;
-    setState(s => { const ns = engine.applyAction(lvl.def, s, a).state; cueFor(a, ns); return ns; });
-  };
-
-  const goOnline = async (mode: "create" | "join", code?: string) => {
-    setNetErr(null);
-    try {
-      const client = new RoomClient({
-        onJoin: (_a, rc) => setRoomCode(rc),
-        onState: (rs) => {
-          const r = rs as { levelId: string; state: TrsPlayState };
-          if (net.current) net.current.levelId = r.levelId;
-          setLevelId(r.levelId); setState(r.state);
-        },
-        onCommand: (p) => fold(p),
-        onError: (_c, msg) => setNetErr(msg),
-      });
-      await client.connect();
-      net.current = { client, levelId };
-      if (mode === "create") client.createRoom("trs", levelId);
-      else client.joinRoom(code ?? "");
-      setScreen("case");
-    } catch { setNetErr("Could not reach the room server."); }
-  };
-
-  const begin = (id: string) => {
-    const e = LEVELS.find(x => x.id === id)!;
-    setLevelId(id); setState(engine.createInitialState(e.def)); setViewing(null); setHintsUsed(0); setScreen("case");
-  };
-  const act = (a: TrsAction) => {
-    if (net.current) { net.current.client.command(a); return; }
-    if (engine.validateAction(entry.def, state, a).ok)
-      setState(s => { const ns = engine.applyAction(entry.def, s, a).state; cueFor(a, ns); return ns; });
-    else trsAudio.play("intervention.deny");
-  };
-
-  if (screen === "title")
-    return <main className="screen title">
-      <img className="title-art" src="/assets/trs-cover.png" alt="Archival diorama of the gala square" />
-      <h1>The Record Stands</h1>
-      <p className="tag">The gala went wrong. Prove you know why — then make it go right.</p>
-      <button onClick={() => setScreen("select")}>Open the case files</button>
-      <button onClick={() => setScreen("lobby")}>Play together</button>
-      <button className="link" onClick={() => setScreen("credits")}>Credits</button>
-      {netErr && <p className="fail">{netErr}</p>}
-    </main>;
-
-  if (screen === "credits")
-    return <main className="screen"><h1>Credits</h1>
-      <p className="why">The Record Stands — a sealed-observation puzzle in twelve files.</p>
-      <ul>
-        <li>A Devin production for the AI Skills Studio Challenge.</li>
-        <li>Design, engine, interface, and levels built in the open; no external art or audio assets — every cue and image is generated in-repo.</li>
-        <li>Engine: deterministic beat simulation over a shared town timeline. Multiplayer: live rooms over WebSocket.</li>
-        <li>The night clerk keeps the ledger; the town keeps its accounts.</li>
-      </ul>
-      <button className="link" onClick={() => setScreen("title")}>← Back</button>
-    </main>;
-
-  if (screen === "lobby") {
-    let codeInput = "";
-    return <main className="screen"><h1>Two heads are better</h1>
-      <p>Open a shared room on a case, or join one by code. Commands resolve on the server and replay here beat-for-beat.</p>
-      <div className="actions">
-        <button className="primary" onClick={() => void goOnline("create")}>Host a room ({levelId})</button>
-        <input placeholder="Room code" onChange={e => codeInput = e.target.value} />
-        <button onClick={() => void goOnline("join", codeInput)}>Join</button>
-      </div>
-      {netErr && <p className="fail">{netErr}</p>}
-      <button className="link" onClick={() => setScreen("title")}>← Back</button>
-    </main>;
-  }
-
-  if (screen === "select")
-    return <main className="screen"><h1>Case files</h1>
-      <div className="actions"><button className="link" onClick={() => setScreen("title")}>← Title</button></div>
-      <div className="levelgrid">{LEVELS.map(l =>
-        <button key={l.id} className="levelcard" onClick={() => begin(l.id)}>
-          <strong>{l.id}</strong><span>{l.def.title}</span>
-          {solvedIds.includes(l.id) && <span className="badge ok">solved</span>}
-        </button>)}</div></main>;
-
-  const level = entry.def;
-  const last: RunRecord | undefined = state.runs[state.runs.length - 1];
-  const shown: RunRecord | undefined = viewing !== null ? state.runs[viewing] : last;
-  const used = engine.committedCost(level, state.config);
-
-  return <main className="screen case">
-    <header>
-      <button onClick={() => setScreen("select")}>← Files</button>
-      <h1>{level.levelId.toUpperCase()}: {level.title}</h1>
-      {KEY_QUESTIONS[level.levelId.toUpperCase()] && <p className="keyq">{KEY_QUESTIONS[level.levelId.toUpperCase()]}</p>}
-      <span className={`badge ${state.solved ? "ok" : ""}`}>
-        {state.solved ? (superseded ? "Case closed — plan modified" : "Case closed") : `Budget ${used}/${level.interventionBudget}`}</span>
-      {roomCode && <span className="badge">Room {roomCode}</span>}
-      {netErr && <p className="fail">{netErr}</p>}
-      <button className="link" onClick={() => { const m = !muted; trsAudio.setMuted(m); setMuted(m);
-        try { localStorage.setItem("trs-muted", m ? "1" : "0"); } catch { /* private mode */ } }}>
-        {muted ? "Sound off" : "Sound on"}</button>
-    </header>
-    <div className="casebody">
-      <section className="board"><SceneView level={level} run={shown} state={state} /></section>
-      <aside className="panel">
-        <h2>Sealed observations</h2>
-        <ul>{level.sealedObservations.map(o => {
-          const r = shown?.evaluation.observations.find(x => x.predicateId === o.id);
-          return <li key={o.id} className={shown ? (r?.passed ? "pass" : "fail") : ""}>
-            {describeObs(o)}
-            {r && !r.passed && r.divergence &&
-              <div className="why">expected {r.divergence.expected}; {r.divergence.actual}</div>}
-          </li>;
-        })}</ul>
-        <h2>Required outcome</h2>
-        <ul>{level.desiredOutcomes.map(o => {
-          const r = shown?.evaluation.outcomes.find(x => x.predicateId === o.id);
-          return <li key={o.id} className={shown ? (r?.passed ? "pass" : "fail") : ""}>
-            {describeOut(o)}
-            {r && !r.passed && r.divergence &&
-              <div className="why">expected {r.divergence.expected}; {r.divergence.actual}</div>}
-          </li>;
-        })}</ul>
-        <h2>Interventions</h2>
-        <InterventionPanel level={level} state={state} act={act} />
-        <div className="actions">
-          <button onClick={() => act({ type: "TestRun" })}>Run simulation</button>
-          <button onClick={() => act({ type: "Undo" })}>Undo</button>
-          <button className="primary" disabled={!(last?.evaluation.success && last.withinBudget)}
-            onClick={() => act({ type: "AcceptResult" })}>Present findings</button>
-        </div>
-        {state.solved && <div className="ending" data-ending={levelId}>
-          <h2>The record stands. Case closed.</h2>
-          {superseded && <p className="why">The plan has changed since the archive accepted it — this verdict no longer describes the board.</p>}
-          <p>{level.title} — the archive accepts your account.</p>
-          {levelId === "TRS-12"
-            ? <p className="why">Every file in the archive now reads true. The night clerk stamps the last ledger: the town's twelve accounts all hold — and you are why.</p>
-            : <p className="why">The clerk pulls the next folder toward you.</p>}
-          <div className="actions">
-            <button className="link" onClick={() => setScreen("select")}>→ Case files</button>
-          </div>
-        </div>}
-        {last && <div className={`verdict ${last.evaluation.success ? "pass" : "fail"}`} data-hints-used={hintsUsed}>
-          {last.evaluation.success ? "All evidence supports the account." : "The account does not hold."}
-          {!last.evaluation.success && (() => {
-            const failed = [...last.evaluation.observations, ...last.evaluation.outcomes]
-              .filter(p => !p.passed);
-            const first = failed
-              .filter(p => p.divergence)
-              .sort((a, b) => a.divergence!.beat - b.divergence!.beat)[0] ?? failed[0];
-            return first
-              ? <div className="why">first breach: {first.predicateId}{first.divergence ? ` at beat ${first.divergence.beat}` : ""}</div>
-              : null;
-          })()}
-          {last.budgetNote && <div>{last.budgetNote}</div>}
-          {hintsUsed > 0 && <div className="why">hints used: {hintsUsed}/{level.hints.length}</div>}
-          <button className="link" onClick={() => setViewing(viewing === null ? state.runs.length - 1 : null)}>
-            {viewing === null ? "Step through timeline" : "Hide timeline"}</button>
-        </div>}
-        {viewing !== null && state.runs[viewing] &&
-          <TimelineView beats={state.runs[viewing].timeline.beats} />}
-        <h2>Hints</h2><HintLadder hints={[...level.hints]} onReveal={setHintsUsed} />
-      </aside>
-    </div>
-  </main>;
-}
-
-function InterventionPanel({ level, state, act }: { level: CaseDefinition; state: TrsPlayState; act: (a: TrsAction) => void }) {
-  const options: { slotKey: string; label: string; iv: Intervention }[] = [];
-  for (const e of level.entities) {
-    if (e.kind === "junction")
-      for (const r of level.routes.filter(r => r.routeId !== String(e.initial.routeId)))
-        options.push({ slotKey: `junction:${e.entityId}`, label: `Junction ${e.name ?? e.entityId} → ${r.label}`, iv: { kind: "RedirectJunction", junctionId: e.entityId, toRouteId: r.routeId } });
-    if (e.kind === "fountain")
-      options.push({ slotKey: `valve:${e.entityId}`, label: `Valve: stop ${e.name}`, iv: { kind: "SetValve", entityId: e.entityId, running: false } });
-    if (e.kind === "fixture" || e.kind === "generic")
-      options.push({ slotKey: `delay:${e.entityId}`, label: `Delay ${e.name} 2 beats`, iv: { kind: "SetMechanismDelay", entityId: e.entityId, delayBeats: 2 } });
-  }
-  for (const s of level.sockets)
-    if (s.accepts.includes("PlaceAndArmToy"))
-      options.push({ slotKey: `socket:${s.socketId}`, label: `Wind-up toy at ${s.socketId}`, iv: { kind: "PlaceAndArmToy", toyId: `toy-${s.socketId}`, socketId: s.socketId } });
-
-  return <ul className="sockets">{options.map(o => {
-    const cur = state.config[o.slotKey];
-    const active = !!cur && cur.kind === o.iv.kind &&
-      (cur as { toRouteId?: string }).toRouteId === (o.iv as { toRouteId?: string }).toRouteId &&
-      (cur as { entityId?: string }).entityId === (o.iv as { entityId?: string }).entityId &&
-      (cur as { socketId?: string }).socketId === (o.iv as { socketId?: string }).socketId;
-    const cost = level.interventionCosts[o.iv.kind] ?? 1;
-    return <li key={o.slotKey}>
-      <button className={active ? "on" : ""}
-        onClick={() => act(active ? { type: "RemoveIntervention", slotKey: o.slotKey }
-          : { type: "SetIntervention", slotKey: o.slotKey, intervention: o.iv })}>
-        {o.label} · cost {cost}</button>
-    </li>;
-  })}</ul>;
-}
-
-function SceneView({ level, run, state }: { level: CaseDefinition; run: RunRecord | undefined; state: TrsPlayState }) {
-  const [beat, setBeat] = useState(0);
-  const [playSpeed, setPlaySpeed] = useState<0 | 1 | 2 | 4>(0);
-  useEffect(() => { setBeat(0); setPlaySpeed(0); }, [run]);
-  // Diegetic beat cues: the replay audibly re-plays each beat's evidence
-  // (bell strikes, skids, toy ratchets, ruined cargo) on step/scrub/autoplay.
-  const CUE_FOR: Record<string, TrsCue> = {
-    BellRing: "bell.ring", Skid: "cobble.splash",
-    ToyStrike: "toy.windup", CargoRuined: "cargo.ruin",
-  };
-  useEffect(() => {
-    if (!run) return;
-    (run.timeline.beats[beat]?.events ?? []).forEach((e, i) => {
-      const cue = CUE_FOR[e.type];
-      if (cue) trsAudio.play(cue, `${e.type}:${e.entityId}:${beat}:${i}`);
+  const connect = useCallback(async (mode: "create" | "join") => {
+    setNetError("");
+    setConnecting(true);
+    clientRef.current?.close();
+    const c = new RoomClient({
+      onJoin: (actor, code) => { setMyActor(actor); setRoomCode(code); setMySeat(c.seat); setOnline(true); setScreen("play"); setConnecting(false); },
+      onState: (s) => { if (s) { buildRef.current = s as BuildState; setBuild(s as BuildState); } },
+      onCommand: (payload, _rev, actorId, events) => foldNet(payload, actorId, events),
+      onMembers: (list) => { membersRef.current = list; setMembers(list); },
+      onError: (code, message) => { setConnecting(false); setNetError(code === "ROOM_NOT_FOUND" ? "No room with that code." : message); },
     });
-  }, [beat, run]);
-  const beats0 = run?.timeline.beats ?? [];
+    clientRef.current = c;
+    try {
+      await c.connect("/ws");
+      if (mode === "create") c.createRoom("trs", buildRef.current.levelId);
+      else c.joinRoom(joinCode.trim());
+    } catch {
+      setConnecting(false);
+      setNetError("Couldn't reach the room server.");
+    }
+  }, [foldNet, joinCode]);
+
+  const leaveRoom = useCallback(() => {
+    clientRef.current?.close();
+    clientRef.current = null;
+    setOnline(false);
+    setRoomCode("");
+    setMembers([]);
+    setBuild((b) => initialBuild(b.levelId));
+  }, []);
+
+  const send = useCallback((cmd: BuildCommand) => {
+    if (online) {
+      clientRef.current?.command(cmd);
+      return;
+    }
+    const cur = buildRef.current;
+    const lv = machineLevel(cur.levelId);
+    if (!validateBuild(lv, cur, cmd).ok) return;
+    const next = applyBuild(cur, "solo", cmd, cmd.type === "ready" && cmd.on);
+    buildRef.current = next;
+    setBuild(next);
+  }, [online]);
+
+  const startLevel = (id: string): void => {
+    if (online) send({ type: "level", levelId: id });
+    else { const b = initialBuild(id); buildRef.current = b; setBuild(b); }
+    setScreen("play");
+  };
+
+  const markSolved = useCallback((id: string) => {
+    setSolved((s) => { if (s.includes(id)) return s; const n = [...s, id]; saveSolved(n); return n; });
+  }, []);
+
+  return (
+    <div className="app">
+      {screen === "title" && (
+        <TitleScreen
+          onPlay={() => setScreen("levels")}
+          onCreate={() => void connect("create")}
+          onJoin={() => void connect("join")}
+          joinCode={joinCode}
+          setJoinCode={setJoinCode}
+          error={netError}
+          connecting={connecting}
+        />
+      )}
+      {screen === "levels" && <LevelSelect solved={solved} onPick={startLevel} onBack={() => setScreen("title")} />}
+      {screen === "play" && (
+        <PlayScreen
+          build={build}
+          range={range}
+          online={online}
+          roomCode={roomCode}
+          members={members}
+          myActor={myActor}
+          mySeat={mySeat}
+          send={send}
+          onMenu={() => { if (online) leaveRoom(); setScreen("levels"); }}
+          onSolved={markSolved}
+          onNext={() => {
+            const i = MACHINE_LEVELS.findIndex((l) => l.id === build.levelId);
+            const nxt = MACHINE_LEVELS[i + 1];
+            if (nxt) startLevel(nxt.id); else setScreen("levels");
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function TitleScreen(p: {
+  onPlay(): void; onCreate(): void; onJoin(): void; joinCode: string; setJoinCode(v: string): void; error: string; connecting: boolean;
+}) {
+  const [together, setTogether] = useState(false);
+  return (
+    <main className="title-screen">
+      <div className="title-art" aria-hidden="true" />
+      <div className="title-card">
+        <p className="kicker">A contraption puzzle for 1–4 players</p>
+        <h1>The Record Stands</h1>
+        <p className="pitch">The gala went wrong. Rebuild the chain of events so every witness is still right — and the cake survives.</p>
+        {!together ? (
+          <div className="title-actions">
+            <button className="wax" onClick={p.onPlay}>Play</button>
+            <button className="paper-btn" onClick={() => setTogether(true)}>Play together</button>
+          </div>
+        ) : (
+          <div className="together">
+            <button className="wax" onClick={p.onCreate} disabled={p.connecting}>Start a room</button>
+            <div className="join-row">
+              <input aria-label="Room code" placeholder="Room code" value={p.joinCode} maxLength={8}
+                onChange={(e) => p.setJoinCode(e.target.value.toUpperCase())} onKeyDown={(e) => { if (e.key === "Enter" && p.joinCode) p.onJoin(); }} />
+              <button className="paper-btn" onClick={p.onJoin} disabled={!p.joinCode || p.connecting}>Join</button>
+            </div>
+            <button className="link-btn" onClick={() => setTogether(false)}>Back</button>
+          </div>
+        )}
+        {p.error && <p className="error" role="alert">{p.error}</p>}
+      </div>
+    </main>
+  );
+}
+
+function LevelSelect(p: { solved: string[]; onPick(id: string): void; onBack(): void }) {
+  return (
+    <main className="levels-screen">
+      <header className="levels-head">
+        <button className="paper-btn small" onClick={p.onBack}>‹ Back</button>
+        <h2>Choose a scene</h2>
+      </header>
+      <div className="level-cards">
+        {MACHINE_LEVELS.map((l) => (
+          <button key={l.id} className="level-card" onClick={() => p.onPick(l.id)}>
+            <span className="level-num">{l.number}</span>
+            <span className="level-title">{l.title}</span>
+            <span className="level-brief">{l.brief}</span>
+            <span className="level-stamps">{l.stamps.map((s, i) => <span key={s.id} className="mini-stamp">{i + 1}. {s.label}</span>)}</span>
+            {p.solved.includes(l.id) && <span className="solved-seal">Solved</span>}
+          </button>
+        ))}
+      </div>
+    </main>
+  );
+}
+
+function PlayScreen(p: {
+  build: BuildState; range: ReturnType<typeof rangeFor>; online: boolean; roomCode: string; members: Member[];
+  myActor: string | null; mySeat: number | null; send(cmd: BuildCommand): void; onMenu(): void; onSolved(id: string): void; onNext(): void;
+}) {
+  const host = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<Stage | null>(null);
+  const [ready, setReady] = useState(false);
+  const [stamps, setStamps] = useState<StampState[]>([]);
+  const [verdict, setVerdict] = useState<Verdict | null>(null);
+  const [hint, setHint] = useState("");
+  const [fast, setFast] = useState(false);
+  const [muted, setMutedState] = useState(isMuted());
+  const [cakeOk, setCakeOk] = useState(true);
+  const [coach, setCoach] = useState(true);
   useEffect(() => {
-    if (!playSpeed || !run) return;
-    const id = setInterval(() => setBeat(b => b + 1), playSpeed === 1 ? 700 : playSpeed === 2 ? 350 : 175);
-    return () => clearInterval(id);
-  }, [playSpeed, run]);
-  useEffect(() => { if (beat >= beats0.length - 1) setPlaySpeed(0); }, [beat, beats0.length]);
-  const beats = run?.timeline.beats ?? [];
-  const snap: Record<string, Record<string, unknown>> =
-    (run && beats[beat]?.entityStates) ||
-    Object.fromEntries(level.entities.map(e => [e.entityId, e.initial]));
-  const entityPos = (id: string) => pos(String(snap[id]?.position ?? id));
-  return <div className="scene">
-    <svg viewBox="0 0 640 360" role="img" aria-label="venue map">
-      {level.routes.map(r => <polyline key={r.routeId}
-        points={r.waypoints.map(w => pos(w.locationId).join(",")).join(" ")}
-        fill="none" stroke={r.routeId.includes("wet") ? "#4a7dbb" : "#8a7d5c"} strokeWidth="3" strokeDasharray="6 4" />)}
-      {level.entities.filter(e => !["trolley", "windUpToy"].includes(e.kind)).map(e => {
-        const [x, y] = pos(String(e.initial.position));
-        const spr = e.kind === "fountain"
-          ? (snap[e.entityId]?.running === true ? "env/trs-env-kit-00.png" : "env/trs-env-kit-01.png")
-          : ENTITY_SPRITE[e.kind];
-        const big = e.kind === "fountain" || e.kind === "arch";
-        const w = big ? 60 : 44, hgt = big ? 64 : 40, dx = big ? 30 : 22, dy = big ? 52 : 30;
-        return <g key={e.entityId}>
-          {spr
-            ? <image href={`/assets/sprites/${spr}`} x={x - dx} y={y - dy} width={w} height={hgt} preserveAspectRatio="xMidYMax meet" />
-            : <circle cx={x} cy={y} r="9" fill={e.kind === "bell" ? "#c9a227" : e.kind === "destination" ? "#b06a4a" : "#5a8a5a"} />}
-          <text x={x} y={y - dy - 4} textAnchor="middle" fontSize="10" fill="#e8e2d4">{e.name}</text></g>;
-      })}
-      {level.actors.map(a => {
-        const [x, y] = entityPos(a.entityId);
-        return <g key={a.entityId}>
-          <image href="/assets/sprites/env/trs-env-kit-04.png" x={x - 18} y={y - 24} width="36" height="30" preserveAspectRatio="xMidYMax meet" />
-          <text x={x} y={y - 28} textAnchor="middle" fontSize="10" fill="#ffd97a">{a.entityId}</text></g>;
-      })}
-      {Object.values(state.config).filter(iv => iv.kind === "PlaceAndArmToy").map((iv, i) => {
-        const s = level.sockets.find(s2 => s2.socketId === (iv as { socketId: string }).socketId);
-        const [x, y] = pos(s?.locationId ?? "tray");
-        return <g key={i}><image href="/assets/sprites/props/trs-prop-sheet-04.png" x={x + 8} y={y + 6} width="22" height="30" preserveAspectRatio="xMidYMax meet" /></g>;
-      })}
-      {run && beats[beat]?.events.map((ev, i) =>
-        <text key={i} x="12" y={340 - i * 14} fontSize="11" fill="#ffd97a">{`b${beats[beat]?.beat}: ${ev.type} ${ev.entityId ?? ""}`}</text>)}
-    </svg>
-    {run && <div className="scrub">
-      <button aria-label="rewind" onClick={() => { setPlaySpeed(0); setBeat(0); }}>⏮</button>
-      <button onClick={() => setBeat(Math.max(0, beat - 1))}>◀</button>
-      <input type="range" min={0} max={beats.length - 1} value={beat} onChange={e => { setPlaySpeed(0); setBeat(+e.target.value); }} aria-label="beat" />
-      <button onClick={() => setBeat(Math.min(beats.length - 1, beat + 1))}>▶</button>
-      <button className={playSpeed ? "on" : ""}
-        onClick={() => setPlaySpeed(playSpeed ? 0 : 1)}
-        aria-label={playSpeed ? "pause" : "play"}>{playSpeed ? "⏸" : "▶"}</button>
-      <button className={playSpeed === 2 ? "on" : ""}
-        onClick={() => setPlaySpeed(playSpeed === 2 ? 0 : 2)} aria-label="play 2x">2×</button>
-      <button className={playSpeed === 4 ? "on" : ""}
-        onClick={() => setPlaySpeed(playSpeed === 4 ? 0 : 4)} aria-label="play 4x">4×</button>
-      <span>beat {beats[beat]?.beat ?? 0}/{beats.length ? beats[beats.length - 1]?.beat ?? 0 : 0}</span>
-    </div>}
-  </div>;
-}
+    setCoach(true);
+    const t = window.setTimeout(() => setCoach(false), 8000);
+    return () => window.clearTimeout(t);
+  }, [p.build.levelId]);
+  const vp = useViewport();
+  const phone = vp.w < 700;
+  const layout: Layout = useMemo(() => (phone ? { top: 112, tray: 96, playReserve: 116 } : { top: 84, tray: 108, playReserve: 220 }), [phone]);
+  const level = machineLevel(p.build.levelId);
+  const sendRef = useRef(p.send);
+  sendRef.current = p.send;
+  const lastRun = useRef(p.build.runSeq);
+  const hintTimer = useRef<number | undefined>(undefined);
 
-function TimelineView({ beats }: { beats: { beat: number; events: { type: string }[] }[] }) {
-  return <ol className="timeline">{beats.map(b =>
-    <li key={b.beat}><b>{b.beat}</b> {b.events.map(e => e.type).join(", ") || "—"}</li>)}</ol>;
-}
+  const showHint = useCallback((m: string) => {
+    setHint(m);
+    window.clearTimeout(hintTimer.current);
+    hintTimer.current = window.setTimeout(() => setHint(""), Math.max(2600, m.length * 70));
+  }, []);
 
-function HintLadder({ hints, onReveal }: { hints: string[]; onReveal?: (n: number) => void }) {
-  const [n, setN] = useState(0);
-  return <div className="hints">
-    {hints.slice(0, n).map((h, i) => <p key={i} className="hint">{h}</p>)}
-    {n < hints.length && <button className="link" onClick={() => { const m = n + 1; setN(m); onReveal?.(m); }}>Reveal hint {n + 1}/{hints.length}</button>}
-    </div>;
-}
+  useEffect(() => {
+    let alive = true;
+    const s = new Stage(host.current!, {
+      onCommand: (c) => sendRef.current(c),
+      onStamp: (i, ok) => setStamps((arr) => { const n = [...arr]; n[i] = ok ? "lit" : "wrong"; return n; }),
+      onRunEnd: (v) => { setVerdict(v); setCakeOk(v.cakeSafe); },
+      onHint: showHint,
+    });
+    void s.init().then(() => {
+      if (!alive) { s.destroy(); return; }
+      stageRef.current = s;
+      s.setLayout(layout);
+      s.setLevel(level, p.build, p.range);
+      setReady(true);
+    });
+    return () => { alive = false; if (stageRef.current) { stageRef.current.destroy(); stageRef.current = null; } };
+  }, []);
 
-function describeObs(o: Observation): string {
-  switch (o.form) {
-    case "EventOccurred": return `${o.entityId}: ${o.eventType} at beat ${o.beat}`;
-    case "EntityAt": return `${o.entityId} at ${o.locationId} at beat ${o.beat}`;
-    case "AtCrossing": return `${o.entityId} crosses ${o.crossingId} at beat ${o.beat}`;
-    case "StateEquals": return `${o.entityId}.${o.field} = ${String(o.value)} at beat ${o.beat}`;
-    case "EventAbsent": return `${o.entityId}: no ${o.eventType} between beats ${o.fromBeat}–${o.toBeat}`;
-    case "EventCount": return `${o.entityId}: ${o.eventType} ×${o.count} between ${o.fromBeat}–${o.toBeat}`;
-    case "VisibleFrom": return `${o.entityId} visible from ${o.cameraRegionId} at beat ${o.beat}`;
-  }
-}
-function describeOut(o: OutcomePredicate): string {
-  switch (o.form) {
-    case "EntityStateAtEnd": return `${o.entityId}.${o.field} = ${String(o.value)} at end`;
-    case "EventOccurredByEnd": return `${o.entityId}: ${o.eventType} occurs by end`;
-    case "EventNever": return `${o.entityId}: ${o.eventType} never occurs`;
-  }
+  useEffect(() => { stageRef.current?.setLayout(layout); }, [layout]);
+
+  const levelId = p.build.levelId;
+  useEffect(() => {
+    if (!ready) return;
+    stageRef.current?.setLevel(machineLevel(levelId), p.build, p.range);
+    // a new scene restarts the run counter; without this the first Play after "Next scene" can be skipped
+    lastRun.current = p.build.phase === "run" ? -1 : p.build.runSeq;
+    setStamps(machineLevel(levelId).stamps.map(() => "dark"));
+    setVerdict(null);
+    setCakeOk(true);
+  }, [levelId, ready]);
+
+  useEffect(() => {
+    const s = stageRef.current;
+    if (!ready || !s) return;
+    if (p.build.phase === "run" && p.build.runSeq !== lastRun.current) {
+      lastRun.current = p.build.runSeq;
+      s.setBuild(p.build, p.range);
+      setStamps(level.stamps.map(() => "dark"));
+      setVerdict(null);
+      setCakeOk(true);
+      s.startRun();
+      return;
+    }
+    if (p.build.phase === "build" && s.isRunning) {
+      s.stopRun();
+      setStamps(level.stamps.map(() => "dark"));
+      setVerdict(null);
+      setCakeOk(true);
+    }
+    s.setBuild(p.build, p.range);
+  }, [p.build, p.range, ready, level]);
+
+  useEffect(() => { if (stageRef.current) stageRef.current.speed = fast ? 2 : 1; }, [fast]);
+  useEffect(() => { if (verdict?.success) p.onSolved(level.id); }, [verdict, level.id, p]);
+
+  const running = p.build.phase === "run";
+  const connected = p.members.filter((m) => m.connected);
+  const iAmReady = !!p.myActor && p.build.ready.includes(p.myActor);
+  const play = (): void => {
+    sfx.pop();
+    if (running) p.send({ type: "reset" });
+    else p.send({ type: "ready", on: p.online ? !iAmReady : true });
+  };
+  const playLabel = running ? (verdict ? "Edit" : "Reset") : p.online && connected.length > 1 ? (iAmReady ? "Waiting…" : "Ready") : "Play";
+  const stretchName = p.range ? (p.range.from === 0 ? "left" : "right") : null;
+
+  return (
+    <div className={`play ${phone ? "phone" : "desk"}`}>
+      <div className="stage-host" ref={host} />
+      <header className="hud-top" style={{ height: layout.top }}>
+        <div className="hud-row">
+          <button className="icon-btn" onClick={p.onMenu} aria-label="Back to scenes">‹</button>
+          <div className="level-name"><span className="num">{level.number}</span><span className="name">{level.title}</span></div>
+          <button className="icon-btn" onClick={() => { const m = !muted; setMuted(m); setMutedState(m); }} aria-label={muted ? "Unmute" : "Mute"}>{muted ? "♪̸" : "♪"}</button>
+        </div>
+        <ol className="stamp-row" aria-label="Witness record">
+          {level.stamps.map((s, i) => (
+            <li key={s.id} className={`stamp ${stamps[i] ?? "dark"}`}>
+              <span className="stamp-num">{i + 1}</span>
+              <span className="stamp-label">{s.label}</span>
+              {stamps[i] === "wrong" && <span className="stamp-flag">too early</span>}
+            </li>
+          ))}
+          <li className={`stamp cake ${cakeOk ? (verdict ? "lit" : "dark") : "wrong"}`}>
+            <img src="/assets/sprites/props/trs-prop-sheet-08.png" alt="" />
+            <span className="stamp-label">{cakeOk ? "CAKE SURVIVES" : "CAKE RUINED"}</span>
+          </li>
+        </ol>
+      </header>
+
+      {p.online && (
+        <div className="stretch-note room-chip" style={{ top: layout.top + 8 }}>
+          Room <b>{p.roomCode}</b> · {connected.length} {connected.length === 1 ? "player" : "players"}
+          {stretchName && !running && <> · You build the {stretchName} stretch</>}
+        </div>
+      )}
+
+      <div className="play-dock" style={{ height: layout.tray, width: layout.playReserve }}>
+        <button className={`speed ${fast ? "on" : ""}`} onClick={() => setFast((f) => !f)} aria-pressed={fast}>2×</button>
+        <button className={`wax play-btn ${running ? "reset" : ""} ${iAmReady && !running ? "waiting" : ""}`} onClick={play}>
+          <span>{playLabel}</span>
+          {p.online && !running && connected.length > 1 && <small>{p.build.ready.length}/{connected.length} ready</small>}
+        </button>
+      </div>
+
+      {hint && <div className="hint" style={{ bottom: layout.tray + 14 }} role="status">{hint}</div>}
+
+      {verdict && (
+        <div className={`verdict-card ${verdict.success ? "win" : "lose"}`} style={{ top: layout.top + (p.online ? 44 : 12) }} role="dialog" aria-label="Run result">
+          <h3>{verdict.success ? "The record stands." : "The record doesn't hold."}</h3>
+          {verdict.success ? (
+            <p>Every witness saw it happen, in order, and the cake made it.</p>
+          ) : (
+            <ul>{verdict.reasons.slice(0, 3).map((r) => <li key={r}>{r}</li>)}</ul>
+          )}
+          {!verdict.success && level.hint && <p className="tip">Tip: {level.hint}</p>}
+          <div className="verdict-actions">
+            {verdict.success ? (
+              <>
+                <button className="paper-btn" onClick={() => p.send({ type: "reset" })}>Replay</button>
+                <button className="wax small" onClick={p.onNext}>{level.number < MACHINE_LEVELS.length ? "Next scene" : "All scenes"}</button>
+              </>
+            ) : (
+              <button className="wax small" onClick={() => p.send({ type: "reset" })}>Back to building</button>
+            )}
+          </div>
+        </div>
+      )}
+      {coach && !running && p.build.placements.length === 0 && !hint && (
+        <div className="coach" style={{ top: layout.top + (p.online ? 44 : 12) }}>{level.brief} Drag parts from the tray, then press Play.</div>
+      )}
+    </div>
+  );
 }
