@@ -380,7 +380,8 @@ function stepMarble(world: World, st: SimState, m: MarbleState): void {
         if (m.seg.startsWith("lever:")) {
           const l = st.levers.find((v) => `lever:${v.id}` === m.seg)!;
           const side = sgn(m.x - l.px);
-          if (side === -l.tilt && Math.abs(m.x - l.px) > C / 2) tipLever(world, st, l, side as -1 | 1);
+          // wired brakes/latches are stiff: a marble rolling across them is not enough weight
+          if (!l.link && side === -l.tilt && Math.abs(m.x - l.px) > C / 2) tipLever(world, st, l, side as -1 | 1);
         }
       }
     }

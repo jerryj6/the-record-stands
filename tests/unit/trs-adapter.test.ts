@@ -40,4 +40,16 @@ describe("room adapter (relay co-op)", () => {
     expect(draft.state.levelId).toBe("gala-01");
     expect(draft.state.placements).toEqual([]);
   });
+  it("level 4 relay: the host's half alone fails; the guest's dominoes and ramp complete it", async () => {
+    const { runMachine } = await import("../../src/engine/machine/sim");
+    const { L4 } = await import("../../src/content/machine/levels");
+    let st = trsAdapter.initRoomState({ roomId: "r", roomCode: "ABCD", seed: "gala-04" });
+    const actors = ["H", "G"];
+    const place = (a: string, kind: string, gx: number, gy: number, flip = false) => ({ state: st } = commit(room(st, actors), a, { type: "place", kind, gx, gy, flip }));
+    place("H", "toy", 9, 11); place("H", "domino", 12, 10); place("H", "domino", 13, 10);
+    expect(trsAdapter.validateCommand(room(st, actors), "H", { type: "place", kind: "domino", gx: 14, gy: 10, flip: false }).ok).toBe(false);
+    expect(runMachine(L4, st.placements).verdict.success).toBe(false);
+    place("G", "domino", 14, 10); place("G", "domino", 15, 10); place("G", "ramp", 23, 3, true);
+    expect(runMachine(L4, st.placements).verdict.success).toBe(true);
+  });
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { L1, L2, L3, MACHINE_LEVELS } from "../../src/content/machine/levels";
+import { L1, L2, L3, L4, L5, L6, MACHINE_LEVELS } from "../../src/content/machine/levels";
+import { SOLUTIONS } from "../lib/solutions";
 import { runMachine } from "../../src/engine/machine/sim";
 import { canPlace } from "../../src/engine/machine/geometry";
 import { applyBuild, initialBuild, rangeFor, validateBuild } from "../../src/engine/machine/editor";
@@ -147,5 +148,60 @@ describe("build reducer and relay stretches", () => {
     expect(s.phase).toBe("run");
     expect(s.runSeq).toBe(1);
     expect(validateBuild(L3, s, { type: "place", kind: "ramp", gx: 7, gy: 6, flip: false }).ok).toBe(false);
+  });
+});
+
+describe("level 4 — The Wind-up Parade", () => {
+  it("the toy starts the domino parade, the latch drops the marble, the ramp sends it to the bell", () => {
+    legal(L4, SOLUTIONS["gala-04"]!);
+    const r = runMachine(L4, SOLUTIONS["gala-04"]!);
+    expect(r.verdict.success).toBe(true);
+    expect(r.events.some((e) => e.type === "release")).toBe(true);
+  });
+  it("tempting wrong build: no ramp under the drop — the marble lands on the cake", () => {
+    const r = runMachine(L4, SOLUTIONS["gala-04"]!.filter((p) => p.kind !== "ramp"));
+    expect(r.verdict.reasons).toContain("The marble splattered the cake.");
+    expect(r.verdict.reasons).toContain("No one saw “PARADE BELL RINGS”.");
+  });
+  it("tempting wrong build: stopping the dominoes at the stretch line never reaches the latch", () => {
+    const r = runMachine(L4, SOLUTIONS["gala-04"]!.filter((p) => !(p.kind === "domino" && p.gx >= 14)));
+    expect(r.verdict.reasons).toEqual(["No one saw “PARADE BELL RINGS”."]);
+  });
+});
+
+describe("level 5 — Bucket Brigade", () => {
+  it("the marble rings the bell from above and the bucket on the brake end makes it heavy enough to release the trolley", () => {
+    legal(L5, SOLUTIONS["gala-05"]!);
+    const r = runMachine(L5, SOLUTIONS["gala-05"]!);
+    expect(r.verdict.success).toBe(true);
+    const noBucket = runMachine(L5, SOLUTIONS["gala-05"]!.filter((p) => p.kind !== "bucket"));
+    expect(noBucket.verdict.reasons).toEqual(["No one saw “TROLLEY PASSES ARCH”."]);
+  });
+  it("tempting wrong build: a bucket on the ground catches the marble but releases nothing", () => {
+    const r = runMachine(L5, [P("a", "rampLong", 7, 5), P("b", "bucket", 20, 11)]);
+    expect(r.verdict.reasons).toEqual(["No one saw “TROLLEY PASSES ARCH”."]);
+  });
+  it("tempting wrong build: a bucket on the brake's low end adds weight where it already is", () => {
+    const r = runMachine(L5, [P("a", "rampLong", 7, 5), P("b", "bucket", 18, 10)]);
+    expect(r.verdict.success).toBe(false);
+    expect(r.verdict.stamps[1]!.hitTick).toBeNull();
+  });
+});
+
+describe("level 6 — The Clockwork Gate", () => {
+  it("the toy, started far enough away, rings the gate bell last", () => {
+    legal(L6, SOLUTIONS["gala-06"]!);
+    const r = runMachine(L6, SOLUTIONS["gala-06"]!);
+    expect(r.verdict.success).toBe(true);
+    const t = r.verdict.stamps.map((s) => s.hitTick!);
+    expect(t[1]!).toBeLessThan(t[2]!);
+  });
+  it("tempting wrong build: a toy started too close rings the gate before the trolley passes", () => {
+    const r = runMachine(L6, [P("a", "rampLong", 7, 5), P("b", "bucket", 21, 10), P("t", "toy", 10, 11, true)]);
+    expect(r.verdict.reasons).toEqual(["“GATE BELL RINGS” happened before “TROLLEY PASSES ARCH”."]);
+  });
+  it("tempting wrong build: a toy started too far away winds down before the gate", () => {
+    const r = runMachine(L6, [P("a", "rampLong", 7, 5), P("b", "bucket", 21, 10), P("t", "toy", 14, 11, true)]);
+    expect(r.verdict.reasons).toEqual(["No one saw “GATE BELL RINGS”."]);
   });
 });

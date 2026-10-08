@@ -123,7 +123,75 @@ export const L4: MachineLevel = {
   hint: "The toy can knock dominoes. The last domino has to reach the latch.",
 };
 
-export const MACHINE_LEVELS: readonly MachineLevel[] = [L1, L2, L3, L4];
+export const L5: MachineLevel = {
+  id: "gala-05",
+  number: 5,
+  title: "Bucket Brigade",
+  brief: "Ring the bell on the way, then let the marble's weight release the trolley.",
+  cols: 34,
+  rows: 14,
+  terrain: [
+    { x: 0, y: 4, w: 7, h: 1 },
+    { x: 0, y: FLOOR_ROW, w: 34, h: 2 },
+  ],
+  fixed: [
+    { id: "chute", kind: "chute", gx: 1, gy: 2, vx: 260, vy: 0 },
+    { id: "bell", kind: "bell", gx: 12, gy: 8, label: "Market bell" },
+    { id: "brake", kind: "lever", gx: 18, gy: 11, link: "trolley", label: "Trolley brake" },
+    { id: "trolley", kind: "trolley", gx: 22, gy: 10, held: true, label: "Cake trolley" },
+    { id: "arch", kind: "arch", gx: 26, gy: 8, label: "Parade arch" },
+    { id: "buffer", kind: "buffer", gx: 33, gy: 11 },
+  ],
+  inventory: { ramp: 2, rampLong: 1, bucket: 1 },
+  stamps: [
+    { id: "s1", label: "MARKET BELL RINGS", kind: "ring", target: "bell" },
+    { id: "s2", label: "TROLLEY PASSES ARCH", kind: "pass", target: "arch" },
+  ],
+  stretches: [0, 17, 34],
+  maxTicks: 2400,
+  decor: [
+    { kind: "fountain", gx: 4, gy: 9 },
+    { kind: "lamp", gx: 15, gy: 9 },
+  ],
+  hint: "A bucket on the brake's raised end turns a falling marble into weight.",
+};
+
+export const L6: MachineLevel = {
+  id: "gala-06",
+  number: 6,
+  title: "The Clockwork Gate",
+  brief: "Bell, trolley, then the gate bell. Time the wind-up toy so it arrives last.",
+  cols: 34,
+  rows: 14,
+  terrain: [
+    { x: 0, y: 4, w: 7, h: 1 },
+    { x: 0, y: FLOOR_ROW, w: 34, h: 2 },
+  ],
+  fixed: [
+    { id: "chute", kind: "chute", gx: 1, gy: 2, vx: 260, vy: 0 },
+    { id: "gate", kind: "bell", gx: 1, gy: 10, label: "Gate bell" },
+    { id: "bell", kind: "bell", gx: 12, gy: 8, label: "Market bell" },
+    { id: "brake", kind: "lever", gx: 18, gy: 11, link: "trolley", label: "Trolley brake" },
+    { id: "trolley", kind: "trolley", gx: 22, gy: 10, held: true, label: "Cake trolley" },
+    { id: "arch", kind: "arch", gx: 26, gy: 8, label: "Parade arch" },
+    { id: "buffer", kind: "buffer", gx: 33, gy: 11 },
+  ],
+  inventory: { ramp: 2, rampLong: 1, bucket: 1, toy: 1 },
+  stamps: [
+    { id: "s1", label: "MARKET BELL RINGS", kind: "ring", target: "bell" },
+    { id: "s2", label: "TROLLEY PASSES ARCH", kind: "pass", target: "arch" },
+    { id: "s3", label: "GATE BELL RINGS", kind: "ring", target: "gate" },
+  ],
+  stretches: [0, 17, 34],
+  maxTicks: 2400,
+  decor: [
+    { kind: "stall", gx: 5, gy: 9 },
+    { kind: "lamp", gx: 15, gy: 9 },
+  ],
+  hint: "The toy is a clock: one cell takes about half a second. Start it farther away.",
+};
+
+export const MACHINE_LEVELS: readonly MachineLevel[] = [L1, L2, L3, L4, L5, L6];
 export function machineLevel(id: string): MachineLevel {
   return MACHINE_LEVELS.find((l) => l.id === id) ?? L1;
 }
