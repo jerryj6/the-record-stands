@@ -1,0 +1,89 @@
+{
+ "sheet": "trs-ui-kit.png",
+ "size": [
+  512,
+  1024
+ ],
+ "bg": [
+  253,
+  254,
+  254
+ ],
+ "sprites": [
+  {
+   "name": "trs-ui-kit-00",
+   "file": "trs-ui-kit-00.png",
+   "src_bbox": [
+    22,
+    28,
+    506,
+    432
+   ],
+   "size": [
+    484,
+    404
+   ],
+   "ink_px": 56021
+  },
+  {
+   "name": "trs-ui-kit-01",
+   "file": "trs-ui-kit-01.png",
+   "src_bbox": [
+    24,
+    435,
+    494,
+    592
+   ],
+   "size": [
+    470,
+    157
+   ],
+   "ink_px": 65271
+  },
+  {
+   "name": "trs-ui-kit-02",
+   "file": "trs-ui-kit-02.png",
+   "src_bbox": [
+    11,
+    755,
+    488,
+    958
+   ],
+   "size": [
+    477,
+    203
+   ],
+   "ink_px": 67324
+  },
+  {
+   "name": "trs-ui-kit-03",
+   "file": "trs-ui-kit-03.png",
+   "src_bbox": [
+    25,
+    612,
+    493,
+    731
+   ],
+   "size": [
+    468,
+    119
+   ],
+   "ink_px": 16921
+  },
+  {
+   "name": "trs-ui-kit-04",
+   "file": "trs-ui-kit-04.png",
+   "src_bbox": [
+    60,
+    628,
+    111,
+    700
+   ],
+   "size": [
+    51,
+    72
+   ],
+   "ink_px": 2005
+  }
+ ]
+}
