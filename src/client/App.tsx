@@ -92,6 +92,7 @@ export function App() {
 
   if (screen === "title")
     return <div className="screen title">
+      <img className="title-art" src="/assets/trs-cover.png" alt="Archival diorama of the gala square" />
       <h1>The Record Stands</h1>
       <p className="tag">The gala went wrong. Prove you know why — then make it go right.</p>
       <button onClick={() => setScreen("select")}>Open the case files</button>
