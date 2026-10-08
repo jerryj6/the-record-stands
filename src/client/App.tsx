@@ -265,6 +265,8 @@ function PlayScreen(p: {
   useEffect(() => {
     if (!ready) return;
     stageRef.current?.setLevel(machineLevel(levelId), p.build, p.range);
+    // a new scene restarts the run counter; without this the first Play after "Next scene" can be skipped
+    lastRun.current = p.build.phase === "run" ? -1 : p.build.runSeq;
     setStamps(machineLevel(levelId).stamps.map(() => "dark"));
     setVerdict(null);
     setCakeOk(true);

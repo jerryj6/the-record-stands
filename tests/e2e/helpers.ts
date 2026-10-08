@@ -9,7 +9,7 @@ export async function waitStage(page: Page): Promise<void> {
 }
 
 /** Drag a part from the tray so its footprint lands at (gx, gy). */
-export async function dragPart(page: Page, kind: PartKind, gx: number, gy: number): Promise<void> {
+export async function dragPart(page: Page, kind: PartKind, gx: number, gy: number, flip = false): Promise<void> {
   const f = FOOTPRINT[kind];
   const before = await page.evaluate(() => (window as unknown as { __trsStage: Probe }).__trsStage.placements());
   const { from, to } = await page.evaluate(([k, x, y]) => {
@@ -22,6 +22,7 @@ export async function dragPart(page: Page, kind: PartKind, gx: number, gy: numbe
   await page.mouse.move(to.x, to.y, { steps: 6 });
   await page.mouse.up();
   await expect.poll(() => page.evaluate(() => (window as unknown as { __trsStage: Probe }).__trsStage.placements())).toBe(before + 1);
+  if (flip) { await page.waitForTimeout(150); await page.mouse.click(to.x, to.y); await page.waitForTimeout(150); }
 }
 
 export async function openLevel(page: Page, title: string): Promise<void> {
