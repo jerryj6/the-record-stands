@@ -194,6 +194,12 @@
    "sha256": "c58d48e5050e6be9a7a96267da7d532ff263f41255b6fc75d40a20413edf85f2",
    "bytes": 2520304,
    "source": "ChatGPT Desktop generated (see /Users/devin/art/MANIFEST.md)"
+  },
+  {
+   "path": "public/assets/trs-cover-2400.png",
+   "sha256": "b152a893f44b1e7d6967055268be7bcc58e8a65a36cc04e4ec94410fe0402ba2",
+   "bytes": 5546100,
+   "source": "ChatGPT Desktop generated; submission-final 2400x1350 upscale of the cover anchor (AI render + exact-size crop/resample)"
   }
  ]
 }

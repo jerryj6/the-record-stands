@@ -62,10 +62,7 @@ claimed.
 
 ## 3. Assets checklist
 
-- [ ] **Cover art** — manifest entry `public/assets/trs-cover.png` is
-      declared in `art/manifests/assets.json`; **PENDING:** the PNG is not
-      present in this ref snapshot — confirm it landed upstream, then export
-      the final at **2400×1350** (current captures elsewhere are 1672×941).
+- [x] **Cover art** — manifest entry `public/assets/trs-cover.png` (1672×941, title screen) plus the submission final `public/assets/trs-cover-2400.png` at **2400×1350** (SHA in art manifest).
 - [ ] **Screenshots** (capture at ≥1920×1080, fresh profile, no dev tools):
   - Title — load `/`, shoot with the `Open the case files` button visible.
   - Case select — after `Open the case files`, grid of TRS-01…TRS-12.
@@ -109,7 +106,7 @@ claimed.
 - [ ] Kind: HTML / browser game; viewport 1280×800 recommended, embed enabled
 - [ ] Upload zipped `dist/` (client) or link the hosted deployment URL —
       confirm the submission surface accepts an external-URL entry
-- [ ] Cover: 2400×1350 final (see PENDING note above)
+- [x] Cover: 2400×1350 final (trs-cover-2400.png)
 - [ ] Screenshots ×4 (list above), trailer video
 - [ ] Tags: `puzzle`, `logic`, `detective`, `causality`, `co-op`,
       `browser-game`, `singleplayer`, `multiplayer`
