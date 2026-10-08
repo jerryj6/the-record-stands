@@ -18,6 +18,14 @@ const POS: Record<string, [number, number]> = {
 };
 const pos = (id?: string) => POS[id ?? ""] ?? [60 + (id ?? "").length * 37 % 520, 40 + (id ?? "").length * 53 % 300];
 
+// Generated-art sprites for entity kinds (art/sprites/props cut from trs-prop-sheet);
+// kinds not listed fall back to primitives until their sheets ship.
+const ENTITY_SPRITE: Record<string, string> = {
+  bell: "trs-prop-sheet-00.png",
+  junction: "trs-prop-sheet-03.png",
+  destination: "trs-prop-sheet-08.png",
+};
+
 export function App() {
   const [screen, setScreen] = useState<Screen>("title");
   const [levelId, setLevelId] = useState<string>(LEVELS[0].id);
@@ -201,9 +209,12 @@ function SceneView({ level, run, state }: { level: CaseDefinition; run: RunRecor
         fill="none" stroke={r.routeId.includes("wet") ? "#4a7dbb" : "#8a7d5c"} strokeWidth="3" strokeDasharray="6 4" />)}
       {level.entities.filter(e => !["trolley", "windUpToy"].includes(e.kind)).map(e => {
         const [x, y] = pos(String(e.initial.position));
-        return <g key={e.entityId}><circle cx={x} cy={y} r="9"
-          fill={e.kind === "bell" ? "#c9a227" : e.kind === "destination" ? "#b06a4a" : "#5a8a5a"} />
-          <text x={x} y={y - 14} textAnchor="middle" fontSize="10" fill="#e8e2d4">{e.name}</text></g>;
+        const spr = ENTITY_SPRITE[e.kind];
+        return <g key={e.entityId}>
+          {spr
+            ? <image href={`/assets/sprites/props/${spr}`} x={x - 22} y={y - 30} width="44" height="40" preserveAspectRatio="xMidYMax meet" />
+            : <circle cx={x} cy={y} r="9" fill={e.kind === "bell" ? "#c9a227" : e.kind === "destination" ? "#b06a4a" : "#5a8a5a"} />}
+          <text x={x} y={y - 34} textAnchor="middle" fontSize="10" fill="#e8e2d4">{e.name}</text></g>;
       })}
       {level.actors.map(a => {
         const [x, y] = entityPos(a.entityId);
@@ -213,7 +224,7 @@ function SceneView({ level, run, state }: { level: CaseDefinition; run: RunRecor
       {Object.values(state.config).filter(iv => iv.kind === "PlaceAndArmToy").map((iv, i) => {
         const s = level.sockets.find(s2 => s2.socketId === (iv as { socketId: string }).socketId);
         const [x, y] = pos(s?.locationId ?? "tray");
-        return <g key={i}><rect x={x + 10} y={y + 10} width="8" height="8" fill="#d4a017" /></g>;
+        return <g key={i}><image href="/assets/sprites/props/trs-prop-sheet-04.png" x={x + 8} y={y + 6} width="22" height="30" preserveAspectRatio="xMidYMax meet" /></g>;
       })}
       {run && beats[beat]?.events.map((ev, i) =>
         <text key={i} x="12" y={340 - i * 14} fontSize="11" fill="#ffd97a">{`b${beats[beat]?.beat}: ${ev.type} ${ev.entityId ?? ""}`}</text>)}
