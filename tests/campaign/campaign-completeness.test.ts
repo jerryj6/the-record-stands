@@ -17,7 +17,7 @@
 import { describe, it, expect } from "vitest";
 import { TrsEngine } from "../../src/engine/trs/engine.js";
 import { LEVELS } from "../../src/content/levels/index.js";
-import { LEVEL_CARDS } from "../../src/content/level-cards.js";
+import { LEVEL_CARDS, KEY_QUESTIONS } from "../../src/content/level-cards.js";
 import {
   WINNING_TRACES, committedRun, replay,
 } from "../lib/winning-traces.js";
@@ -112,5 +112,14 @@ describe("GME-007: four-person-meaningful levels carry real coopNotes", () => {
     // Each note enumerates ≥4 comma/semicolon-separated jobs.
     const parts = note!.split(/;|\)/).filter(s => s.trim().length > 0);
     expect(parts.length, `${id} coopNote should enumerate ≥4 contributions`).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe("GME-009: every case poses its key question", () => {
+  it.each(LEVELS.map(l => l.id))("%s has a non-trivial keyQuestion", (id) => {
+    const q = KEY_QUESTIONS[id];
+    expect(q, `${id}: missing keyQuestion`).toBeDefined();
+    expect(q!.trim().endsWith("?"), `${id}: keyQuestion should be phrased as a question`).toBe(true);
+    expect(q!.length).toBeGreaterThan(20);
   });
 });

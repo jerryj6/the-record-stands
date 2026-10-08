@@ -210,7 +210,7 @@ function InterventionPanel({ level, state, act }: { level: CaseDefinition; state
   for (const e of level.entities) {
     if (e.kind === "junction")
       for (const r of level.routes.filter(r => r.routeId !== String(e.initial.routeId)))
-        options.push({ slotKey: `junction:${e.entityId}`, label: `Junction → ${r.label}`, iv: { kind: "RedirectJunction", junctionId: e.entityId, toRouteId: r.routeId } });
+        options.push({ slotKey: `junction:${e.entityId}`, label: `Junction ${e.name ?? e.entityId} → ${r.label}`, iv: { kind: "RedirectJunction", junctionId: e.entityId, toRouteId: r.routeId } });
     if (e.kind === "fountain")
       options.push({ slotKey: `valve:${e.entityId}`, label: `Valve: stop ${e.name}`, iv: { kind: "SetValve", entityId: e.entityId, running: false } });
     if (e.kind === "fixture" || e.kind === "generic")
