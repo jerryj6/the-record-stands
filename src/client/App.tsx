@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TrsEngine } from "../engine/trs/engine.js";
 import type { TrsPlayState, TrsAction, RunRecord } from "../engine/trs/engine.js";
 import type { CaseDefinition, Intervention, Observation, OutcomePredicate } from "../engine/trs/types.js";
 import { LEVELS } from "../content/levels/index.js";
+import { RoomClient } from "./net/roomClient.js";
 
 const engine = new TrsEngine();
 
-type Screen = "title" | "select" | "case";
+type Screen = "title" | "select" | "case" | "lobby";
 
 const POS: Record<string, [number, number]> = {
   start: [40, 300], laneWest: [110, 250], fountainEdge: [210, 220], bellCorner: [310, 190],
@@ -22,12 +23,44 @@ export function App() {
   const entry = LEVELS.find(l => l.id === levelId)!;
   const [state, setState] = useState<TrsPlayState>(() => engine.createInitialState(entry.def));
   const [viewing, setViewing] = useState<number | null>(null);
+  const net = useRef<{ client: RoomClient; levelId: string } | null>(null);
+  const [roomCode, setRoomCode] = useState<string | null>(null);
+  const [netErr, setNetErr] = useState<string | null>(null);
+
+  const fold = (payload: unknown) => {
+    // Lockstep: apply an accepted command payload through the local engine.
+    const cur = net.current;
+    const lvl = LEVELS.find(l => l.id === (cur?.levelId ?? levelId));
+    if (!lvl) return;
+    setState(s => engine.applyAction(lvl.def, s, payload as TrsAction).state);
+  };
+
+  const goOnline = async (mode: "create" | "join", code?: string) => {
+    try {
+      const client = new RoomClient({
+        onJoin: (_a, rc) => setRoomCode(rc),
+        onState: (rs) => {
+          const r = rs as { levelId: string; state: TrsPlayState };
+          net.current && (net.current.levelId = r.levelId);
+          setLevelId(r.levelId); setState(r.state);
+        },
+        onCommand: (p) => fold(p),
+        onError: (_c, msg) => setNetErr(msg),
+      });
+      await client.connect();
+      net.current = { client, levelId };
+      if (mode === "create") client.createRoom("trs", levelId);
+      else client.joinRoom(code ?? "");
+      setScreen("case");
+    } catch { setNetErr("Could not reach the room server."); }
+  };
 
   const begin = (id: string) => {
     const e = LEVELS.find(x => x.id === id)!;
     setLevelId(id); setState(engine.createInitialState(e.def)); setViewing(null); setScreen("case");
   };
   const act = (a: TrsAction) => {
+    if (net.current) { net.current.client.command(a); return; }
     if (engine.validateAction(entry.def, state, a).ok)
       setState(engine.applyAction(entry.def, state, a).state);
   };
@@ -37,7 +70,23 @@ export function App() {
       <h1>The Record Stands</h1>
       <p className="tag">The gala went wrong. Prove you know why — then make it go right.</p>
       <button onClick={() => setScreen("select")}>Open the case files</button>
+      <button onClick={() => setScreen("lobby")}>Play together</button>
+      {netErr && <p className="fail">{netErr}</p>}
     </div>;
+
+  if (screen === "lobby") {
+    let codeInput = "";
+    return <div className="screen"><h2>Two heads are better</h2>
+      <p>Open a shared room on a case, or join one by code. Commands resolve on the server and replay here beat-for-beat.</p>
+      <div className="actions">
+        <button className="primary" onClick={() => void goOnline("create")}>Host a room ({levelId})</button>
+        <input placeholder="Room code" onChange={e => codeInput = e.target.value} />
+        <button onClick={() => void goOnline("join", codeInput)}>Join</button>
+      </div>
+      {netErr && <p className="fail">{netErr}</p>}
+      <button className="link" onClick={() => setScreen("title")}>← Back</button>
+    </div>;
+  }
 
   if (screen === "select")
     return <div className="screen"><h2>Case files</h2>
@@ -57,6 +106,7 @@ export function App() {
       <h2>{level.levelId}: {level.title}</h2>
       <span className={`badge ${state.solved ? "ok" : ""}`}>
         {state.solved ? "Case closed" : `Budget ${used}/${level.interventionBudget}`}</span>
+      {roomCode && <span className="badge">Room {roomCode}</span>}
     </header>
     <div className="casebody">
       <section className="board"><SceneView level={level} run={shown} state={state} /></section>
