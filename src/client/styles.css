@@ -43,3 +43,5 @@ li .why{font-size:12px;opacity:.85;margin:2px 0 4px;font-style:italic}
 
 aside li.pass::before{content:"\2713\0020"}
 aside li.fail::before{content:"\2717\0020"}
+
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
