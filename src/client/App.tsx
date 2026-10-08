@@ -4,6 +4,7 @@ import type { TrsPlayState, TrsAction, RunRecord } from "../engine/trs/engine.js
 import type { CaseDefinition, Intervention, Observation, OutcomePredicate } from "../engine/trs/types.js";
 import { LEVELS } from "../content/levels/index.js";
 import { RoomClient } from "./net/roomClient.js";
+import { trsAudio } from "./audio.js";
 
 const engine = new TrsEngine();
 
@@ -26,13 +27,26 @@ export function App() {
   const net = useRef<{ client: RoomClient; levelId: string } | null>(null);
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [netErr, setNetErr] = useState<string | null>(null);
+  const [muted, setMuted] = useState(false);
+
+  const cueFor = (a: TrsAction, s: TrsPlayState) => {
+    const last = s.runs[s.runs.length - 1];
+    switch (a.type) {
+      case "SetIntervention": trsAudio.play("intervention.place"); break;
+      case "TestRun": trsAudio.play("trolley.roll"); break;
+      case "AcceptResult": if (s.solved) trsAudio.play("case.close"); break;
+      case "Undo": trsAudio.play("ui.tick"); break;
+    }
+    if (a.type === "TestRun" && last) trsAudio.play(last.evaluation.success ? "record.verify" : "record.contradict");
+  };
 
   const fold = (payload: unknown) => {
     // Lockstep: apply an accepted command payload through the local engine.
     const cur = net.current;
     const lvl = LEVELS.find(l => l.id === (cur?.levelId ?? levelId));
     if (!lvl) return;
-    setState(s => engine.applyAction(lvl.def, s, payload as TrsAction).state);
+    const a = payload as TrsAction;
+    setState(s => { const ns = engine.applyAction(lvl.def, s, a).state; cueFor(a, ns); return ns; });
   };
 
   const goOnline = async (mode: "create" | "join", code?: string) => {
@@ -62,7 +76,8 @@ export function App() {
   const act = (a: TrsAction) => {
     if (net.current) { net.current.client.command(a); return; }
     if (engine.validateAction(entry.def, state, a).ok)
-      setState(engine.applyAction(entry.def, state, a).state);
+      setState(s => { const ns = engine.applyAction(entry.def, s, a).state; cueFor(a, ns); return ns; });
+    else trsAudio.play("intervention.deny");
   };
 
   if (screen === "title")
@@ -107,6 +122,8 @@ export function App() {
       <span className={`badge ${state.solved ? "ok" : ""}`}>
         {state.solved ? "Case closed" : `Budget ${used}/${level.interventionBudget}`}</span>
       {roomCode && <span className="badge">Room {roomCode}</span>}
+      <button className="link" onClick={() => { const m = !muted; trsAudio.setMuted(m); setMuted(m); }}>
+        {muted ? "Sound off" : "Sound on"}</button>
     </header>
     <div className="casebody">
       <section className="board"><SceneView level={level} run={shown} state={state} /></section>
