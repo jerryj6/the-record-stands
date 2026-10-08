@@ -137,7 +137,7 @@ describe("build reducer and relay stretches", () => {
     const a = rangeFor(L3, 1, 2)!;
     const b = rangeFor(L3, 2, 2)!;
     expect(a).toEqual({ from: 0, to: 14 });
-    expect(b).toEqual({ from: 14, to: 28 });
+    expect(b).toEqual({ from: 14, to: 32 });
     let s = initialBuild(L3.id);
     expect(validateBuild(L3, s, { type: "place", kind: "domino", gx: 20, gy: 10, flip: false }, a).ok).toBe(false);
     expect(validateBuild(L3, s, { type: "place", kind: "domino", gx: 10, gy: 10, flip: false }, a).ok).toBe(true);

@@ -67,11 +67,11 @@ export const L3: MachineLevel = {
   number: 3,
   title: "Through the Arch",
   brief: "Ring both bells, then roll the cake trolley safely through the arch.",
-  cols: 28,
+  cols: 32,
   rows: 14,
   terrain: [
     { x: 0, y: 4, w: 7, h: 1 },
-    { x: 0, y: FLOOR_ROW, w: 28, h: 2 },
+    { x: 0, y: FLOOR_ROW, w: 32, h: 2 },
   ],
   fixed: [
     { id: "chute", kind: "chute", gx: 1, gy: 2, vx: 260, vy: 0 },
@@ -79,8 +79,8 @@ export const L3: MachineLevel = {
     { id: "tower", kind: "bell", gx: 4, gy: 10, label: "Tower bell" },
     { id: "brake", kind: "lever", gx: 16, gy: 11, flip: true, link: "trolley", label: "Trolley brake" },
     { id: "trolley", kind: "trolley", gx: 20, gy: 10, held: true, label: "Cake trolley" },
-    { id: "arch", kind: "arch", gx: 23, gy: 8, label: "Parade arch" },
-    { id: "buffer", kind: "buffer", gx: 27, gy: 11 },
+    { id: "arch", kind: "arch", gx: 24, gy: 8, label: "Parade arch" },
+    { id: "buffer", kind: "buffer", gx: 31, gy: 11 },
   ],
   inventory: { ramp: 2, domino: 6, bucket: 1, toy: 1 },
   stamps: [
@@ -88,7 +88,7 @@ export const L3: MachineLevel = {
     { id: "s2", label: "TOWER BELL RINGS", kind: "ring", target: "tower" },
     { id: "s3", label: "TROLLEY PASSES ARCH", kind: "pass", target: "arch" },
   ],
-  stretches: [0, 14, 28],
+  stretches: [0, 14, 32],
   maxTicks: 1800,
   decor: [
     { kind: "lamp", gx: 7, gy: 9 },

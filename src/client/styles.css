@@ -20,7 +20,7 @@ button:disabled{opacity:.5;cursor:default}
 .title-screen{position:relative;height:100%;display:grid;place-items:center;overflow:hidden}
 .title-art{position:absolute;inset:0;background:url(/assets/trs-hero-anchor.png) center/cover no-repeat}
 .title-art::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(43,29,18,.05) 30%,rgba(43,29,18,.55))}
-.title-card{position:relative;max-width:min(560px,92vw);background:url(/assets/trs-material-paper.png) center/600px,var(--paper);border:3px solid var(--ink);border-radius:6px;padding:28px 32px 26px;text-align:center;box-shadow:8px 8px 0 rgba(43,29,18,.45);transform:rotate(-.6deg)}
+.title-card{position:relative;max-width:min(560px,92vw);background:linear-gradient(#fbf3e1,#f1e2c2);border:3px solid var(--ink);border-radius:6px;padding:28px 32px 26px;text-align:center;box-shadow:8px 8px 0 rgba(43,29,18,.45);transform:rotate(-.6deg)}
 .title-card h1{font-size:clamp(34px,7vw,56px);margin:4px 0 10px;line-height:1.05;color:var(--red);letter-spacing:.01em}
 .kicker{margin:0;text-transform:uppercase;font-size:12px;letter-spacing:.18em}
 .pitch{margin:0 auto 20px;max-width:430px}
@@ -30,7 +30,7 @@ button:disabled{opacity:.5;cursor:default}
 .error{color:var(--bad);font-weight:700;margin:12px 0 0}
 
 /* level select */
-.levels-screen{height:100%;overflow:auto;background:url(/assets/trs-material-paper.png) center/700px,#e9d5ab;padding:24px max(16px,4vw)}
+.levels-screen{height:100%;overflow:auto;background:radial-gradient(ellipse at 50% 30%,#f8ecd2 0%,#eedcb6 60%,#e2c99b 100%);padding:24px max(16px,4vw)}
 .levels-head{display:flex;align-items:center;gap:16px;max-width:1100px;margin:0 auto 18px}
 .levels-head h2{margin:0;font-size:28px}
 .level-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;max-width:1100px;margin:0 auto}
@@ -90,7 +90,7 @@ button:disabled{opacity:.5;cursor:default}
 .stretch-note{position:absolute;left:50%;transform:translateX(-50%);background:#fffaf0;border:2px solid var(--ink);border-radius:999px;padding:3px 12px;font-size:13px;font-weight:700;pointer-events:none;white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis}
 .phone .stretch-note{font-size:11px;padding:2px 8px}
 .phone .coach{font-size:13px;padding:7px 12px}
-.verdict-card{position:absolute;left:50%;transform:translateX(-50%) rotate(-.5deg);width:min(440px,92vw);background:url(/assets/trs-material-paper.png) center/500px,var(--paper);border:3px solid var(--ink);border-radius:6px;padding:14px 18px;box-shadow:6px 6px 0 rgba(43,29,18,.4)}
+.verdict-card{position:absolute;left:50%;transform:translateX(-50%) rotate(-.5deg);width:min(440px,92vw);background:linear-gradient(#fbf3e1,#f1e2c2);border:3px solid var(--ink);border-radius:6px;padding:14px 18px;box-shadow:6px 6px 0 rgba(43,29,18,.4)}
 .verdict-card h3{margin:0 0 6px;font-size:22px}
 .verdict-card.win h3{color:var(--ok)}
 .verdict-card.lose h3{color:var(--bad)}

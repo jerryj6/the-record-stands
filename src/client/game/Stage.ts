@@ -35,6 +35,8 @@ export const PART_NAMES: Record<PartKind, string> = {
   bucket: "Bucket",
   toy: "Wind-up toy",
 };
+/** Sim ticks played per second at 1× (the sim itself is tick-based and speed-independent). */
+const PLAYBACK_TPS = 120;
 const TRAY_ORDER: PartKind[] = ["ramp", "rampLong", "domino", "lever", "bucket", "toy"];
 const DECOR_H: Record<DecorKind, number> = { lamp: 3, lampTall: 3, stall: 3, fountain: 3, banner: 3, wall: 3 };
 
@@ -270,10 +272,17 @@ export class Stage {
     for (const d of L.decor) {
       const h = DECOR_H[d.kind] * u * (d.scale ?? 1);
       const s = this.sprite(d.kind, h, 0.5, 1);
-      s.position.set((d.gx + 1) * u, (d.gy + DECOR_H[d.kind]) * u);
-      s.alpha = 0.92;
+      s.position.set((d.gx + 1) * u, (d.gy + DECOR_H[d.kind]) * u - u * 0.35);
+      // decor never collides, so it is pushed behind a depth line: smaller, hazed and warm-tinted
+      s.scale.set(s.scale.x * 0.82);
+      s.tint = 0xd8c6a2;
+      s.alpha = 0.55;
       this.bgLayer.addChild(s);
     }
+    const haze = new Graphics();
+    haze.rect(0, u * 11.2, W, u * 0.8).fill({ color: PAL.paper, alpha: 0.35 });
+    haze.moveTo(0, u * 11.65).lineTo(W, u * 11.65).stroke({ width: 1, color: PAL.ink, alpha: 0.25 });
+    this.bgLayer.addChild(haze);
     const terr = new Graphics();
     // canal water fills the bottom rows where there is no ground
     for (const r of L.terrain) drawStone(terr, u, r.x * u, r.y * u, r.w * u, r.h * u);
@@ -764,9 +773,9 @@ export class Stage {
     if (this.running && !this.finished) {
       this.acc += Math.min(100, dtMs) * this.speed;
       let steps = 0;
-      while (this.acc >= 1000 / 60 && steps < 12 && !this.sim.done) {
+      while (this.acc >= 1000 / PLAYBACK_TPS && steps < 16 && !this.sim.done) {
         stepSim(this.world, this.sim);
-        this.acc -= 1000 / 60;
+        this.acc -= 1000 / PLAYBACK_TPS;
         steps++;
       }
       this.consumeEvents();
