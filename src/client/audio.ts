@@ -93,6 +93,7 @@ export class TrsAudio {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private muted = false;
+  private ambientStarted = false;
   private lastPlay = new Map<string, number>();
 
   private ensure(): AudioContext | null {
@@ -106,7 +107,29 @@ export class TrsAudio {
       this.master.connect(this.ctx.destination);
     }
     if (this.ctx.state === "suspended") void this.ctx.resume();
+    if (!this.ambientStarted) { this.ambientStarted = true; this.startAmbient(); }
     return this.ctx;
+  }
+
+  /** Room tone: a very quiet looping filtered-noise bed + slow sine swell.
+      Presence, not music — the surveillance room hum. Starts on the first
+      sounding action (gesture-safe) and rides the master mute. */
+  private startAmbient() {
+    if (!this.ctx || !this.master) return;
+    const ctx = this.ctx, dur = 4;
+    const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+    const ch = buf.getChannelData(0);
+    for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * 0.5;
+    const src = ctx.createBufferSource();
+    src.buffer = buf; src.loop = true;
+    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 420;
+    const g = ctx.createGain(); g.gain.value = 0.012;
+    src.connect(lp).connect(g).connect(this.master);
+    src.start();
+    const osc = ctx.createOscillator(); osc.type = "sine"; osc.frequency.value = 55;
+    const og = ctx.createGain(); og.gain.value = 0.006;
+    osc.connect(og).connect(this.master);
+    osc.start();
   }
 
   setMuted(m: boolean) {

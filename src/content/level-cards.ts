@@ -76,6 +76,26 @@ export const DIFFICULTY_VECTORS: Readonly<Record<string, DifficultyVector>> = {
   "TRS-12": { minimalSolutions: 14, budget: 5 },
 };
 
+/**
+ * keyQuestion per level (GME-009 §3.x development-as-content): the level's
+ * catch as a question — what the sealed record asks the player to notice.
+ * Card metadata; rendered above the hint ladder in the case panel.
+ */
+export const KEY_QUESTIONS: Readonly<Record<string, string>> = {
+  "TRS-01": "What made the trolley hit the bell — and does the record care who rings it?",
+  "TRS-02": "The lantern was late — but was its crossing early in the record?",
+  "TRS-03": "Shorter is not on time — which road keeps the gate's beat?",
+  "TRS-04": "The chime rang once — must the counterweight ring it?",
+  "TRS-05": "Both sides of the square are sealed — can one plan hold both?",
+  "TRS-06": "The record counted one ring — who should NOT skid?",
+  "TRS-07": "Was the delivery wrong, or were the routes?",
+  "TRS-08": "What rings once and then stays silent?",
+  "TRS-09": "Two bells, one beat — whose cause covers each?",
+  "TRS-10": "Which consequence can be inherited instead of rebuilt?",
+  "TRS-11": "Two half-plans, one empty cart — which road commits?",
+  "TRS-12": "A bell that must ring and a tower that must stay silent — which substitute knows the difference?",
+};
+
 const TRS01_CARD: LevelCard = {
   winningTraceSummary:
     "Redirect the square junction onto the dry arcade lane — same duration, the arch crossing at 5 preserved — and set the wind-up drummer at the bell socket: it strikes the brass bell at 4 (2/2).",

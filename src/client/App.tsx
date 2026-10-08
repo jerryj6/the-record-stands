@@ -3,6 +3,7 @@ import { TrsEngine } from "../engine/trs/engine.js";
 import type { TrsPlayState, TrsAction, RunRecord } from "../engine/trs/engine.js";
 import type { CaseDefinition, Intervention, Observation, OutcomePredicate } from "../engine/trs/types.js";
 import { LEVELS } from "../content/levels/index.js";
+import { KEY_QUESTIONS } from "../content/level-cards.js";
 import { RoomClient } from "./net/roomClient.js";
 import { trsAudio, type TrsCue } from "./audio.js";
 
@@ -143,6 +144,7 @@ export function App() {
     <header>
       <button onClick={() => setScreen("select")}>← Files</button>
       <h2>{level.levelId}: {level.title}</h2>
+      {KEY_QUESTIONS[level.levelId] && <p className="keyq">{KEY_QUESTIONS[level.levelId]}</p>}
       <span className={`badge ${state.solved ? "ok" : ""}`}>
         {state.solved ? "Case closed" : `Budget ${used}/${level.interventionBudget}`}</span>
       {roomCode && <span className="badge">Room {roomCode}</span>}

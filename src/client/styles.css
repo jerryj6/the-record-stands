@@ -45,3 +45,5 @@ aside li.pass::before{content:"\2713\0020"}
 aside li.fail::before{content:"\2717\0020"}
 
 button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+header .keyq{margin:2px 0 0;font-style:italic;opacity:.75;font-size:.85rem}
