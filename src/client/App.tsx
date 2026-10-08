@@ -238,7 +238,7 @@ function PlayScreen(p: {
   const showHint = useCallback((m: string) => {
     setHint(m);
     window.clearTimeout(hintTimer.current);
-    hintTimer.current = window.setTimeout(() => setHint(""), 2600);
+    hintTimer.current = window.setTimeout(() => setHint(""), Math.max(2600, m.length * 70));
   }, []);
 
   useEffect(() => {

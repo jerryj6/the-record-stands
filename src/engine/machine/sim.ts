@@ -321,6 +321,14 @@ function toyBox(toy: ToyState, x = toy.x): Box { return { x0: x - t(C * 0.4), y0
 function trolleyBase(tr: TrolleyState, x = tr.x): Box { return { x0: x, y0: tr.y - t(C * 1.1), x1: x + tr.w, y1: tr.y - 1 }; }
 function trolleyCake(tr: TrolleyState, x = tr.x): Box { return { x0: x + t(C * 0.8), y0: tr.y - 2 * C + C / 8, x1: x + t(C * 2.2), y1: tr.y - t(C * 1.1) }; }
 function bucketBox(b: BucketState): Box { return { x0: b.x - t(C * 0.42), y0: b.y - t(C * 0.8), x1: b.x + t(C * 0.42), y1: b.y }; }
+function lyingDominoBox(d: DominoState): Box {
+  const reach = d.dir === 0 ? DOMINO_HALF_T : d.dir * DOMINO_H;
+  return { x0: Math.min(d.bx - DOMINO_HALF_T, d.bx + reach), y0: d.by - 2 * DOMINO_HALF_T - C / 16, x1: Math.max(d.bx + DOMINO_HALF_T, d.bx + reach), y1: d.by };
+}
+function leverBox(l: LeverState): Box {
+  const e = leverEnds(l);
+  return { x0: e.lx, y0: Math.min(e.ly, e.ry) - C / 8, x1: e.rx, y1: l.py + C / 2 };
+}
 function leverFoot(l: LeverState): Box { return { x0: l.px - C / 2, y0: l.py, x1: l.px + C / 2, y1: l.py + C / 2 }; }
 
 function groundAt(world: World, x: number, y: number): boolean {
@@ -412,7 +420,8 @@ function stepMarble(world: World, st: SimState, m: MarbleState): void {
       if (s.owner.startsWith("lever:")) {
         const l = st.levers.find((v) => `lever:${v.id}` === s.owner)!;
         const side = sgn(m.x - l.px);
-        if (side === -l.tilt && Math.abs(m.x - l.px) > C / 4) tipLever(world, st, l, side as -1 | 1);
+        // wired brakes/latches only answer to a loaded bucket or a domino, never a bare marble
+        if (!l.link && side === -l.tilt && Math.abs(m.x - l.px) > C / 4) tipLever(world, st, l, side as -1 | 1);
       }
     } else {
       m.x = x1;
@@ -431,7 +440,8 @@ function marbleContacts(world: World, st: SimState, m: MarbleState): void {
   if (m.x > level.cols * C - R) { m.x = level.cols * C - R; m.vx = -Math.abs(t(m.vx / 2)); if (m.mode === "roll") { m.mode = "air"; m.seg = ""; } }
   // buckets catch before anything else
   for (const b of st.buckets) {
-    const inner = { x0: b.x - t(C * 0.36), y0: b.y - t(C * 0.8), x1: b.x + t(C * 0.36), y1: b.y };
+    // a marble whose bottom dips into the open mouth is caught (before the rim can bounce it)
+    const inner = { x0: b.x - t(C * 0.36), y0: b.y - t(C * 0.8) - R, x1: b.x + t(C * 0.36), y1: b.y };
     if (m.vy >= 0 && pointIn(m.x, m.y, inner)) {
       m.mode = "caught";
       m.seg = `bucket:${b.id}`;
@@ -546,8 +556,9 @@ function toyBlocked(world: World, st: SimState, toy: ToyState, box: Box): boolea
   let blocked = false;
   for (const w of world.walls) if (overlaps(box, w.box)) blocked = true;
   for (const b of world.buffers) if (overlaps(box, b)) blocked = true;
+  // one rule everywhere: the toy stops at every solid part, standing or fallen
   for (const d of st.dominoes) {
-    if (d.state === "down" || d.ang >= 600) continue;
+    if (d.state === "down" || d.ang >= 600) { if (overlaps(box, lyingDominoBox(d))) blocked = true; continue; }
     if (d.state === "up" && overlaps(box, dominoBox(d))) { topple(st, d, toy.dir); blocked = true; }
     else if (d.state === "falling" && Math.abs(d.bx - toy.x) < C) blocked = true;
   }
@@ -560,7 +571,7 @@ function toyBlocked(world: World, st: SimState, toy: ToyState, box: Box): boolea
   }
   for (const tr of st.trolleys) if (overlaps(box, trolleyBase(tr))) blocked = true;
   for (const b of st.buckets) if (!b.lever && overlaps(box, bucketBox(b))) blocked = true;
-  for (const l of st.levers) if (overlaps(box, leverFoot(l))) blocked = true;
+  for (const l of st.levers) if (overlaps(box, leverFoot(l)) || overlaps(box, leverBox(l))) blocked = true;
   for (const o of st.toys) if (o !== toy && o.mode !== "gone" && overlaps(box, toyBox(o))) blocked = true;
   return blocked;
 }

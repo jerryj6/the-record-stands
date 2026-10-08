@@ -13,7 +13,7 @@ test("win a scene, go to the next one, build it, and the first Play runs to a ve
   await page.getByRole("button", { name: "Next scene" }).click();
   await expect(page.locator(".level-name")).toContainText("Bucket Brigade");
   await dragPart(page, "rampLong", 7, 5);
-  await dragPart(page, "bucket", 21, 10);
+  await dragPart(page, "bucket", 17, 10);
   await dragPart(page, "ramp", 2, 10);
   await page.getByRole("button", { name: "Play", exact: true }).click();
   await expect(page.getByText(/The record (stands|doesn't hold)\./)).toBeVisible({ timeout: 60000 });

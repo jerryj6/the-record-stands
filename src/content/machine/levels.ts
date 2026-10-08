@@ -137,7 +137,7 @@ export const L5: MachineLevel = {
   fixed: [
     { id: "chute", kind: "chute", gx: 1, gy: 2, vx: 260, vy: 0 },
     { id: "bell", kind: "bell", gx: 12, gy: 8, label: "Market bell" },
-    { id: "brake", kind: "lever", gx: 18, gy: 11, link: "trolley", label: "Trolley brake" },
+    { id: "brake", kind: "lever", gx: 14, gy: 11, link: "trolley", label: "Trolley brake" },
     { id: "trolley", kind: "trolley", gx: 22, gy: 10, held: true, label: "Cake trolley" },
     { id: "arch", kind: "arch", gx: 26, gy: 8, label: "Parade arch" },
     { id: "buffer", kind: "buffer", gx: 33, gy: 11 },
@@ -171,7 +171,7 @@ export const L6: MachineLevel = {
     { id: "chute", kind: "chute", gx: 1, gy: 2, vx: 260, vy: 0 },
     { id: "gate", kind: "bell", gx: 1, gy: 10, label: "Gate bell" },
     { id: "bell", kind: "bell", gx: 12, gy: 8, label: "Market bell" },
-    { id: "brake", kind: "lever", gx: 18, gy: 11, link: "trolley", label: "Trolley brake" },
+    { id: "brake", kind: "lever", gx: 14, gy: 11, link: "trolley", label: "Trolley brake" },
     { id: "trolley", kind: "trolley", gx: 22, gy: 10, held: true, label: "Cake trolley" },
     { id: "arch", kind: "arch", gx: 26, gy: 8, label: "Parade arch" },
     { id: "buffer", kind: "buffer", gx: 33, gy: 11 },

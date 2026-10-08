@@ -182,6 +182,7 @@ export class Stage {
     this.rebuildDynamic();
     this.drawBadges();
     this.drawTray();
+    this.drawStatic();
   }
 
   stopRun(): void {
@@ -191,6 +192,7 @@ export class Stage {
     this.particles = [];
     this.resetPreview();
     this.drawTray();
+    this.drawStatic();
   }
 
   get isRunning(): boolean { return this.running; }
@@ -333,7 +335,15 @@ export class Stage {
       const holder = new Container();
       holder.position.set(p.gx * u, p.gy * u);
       holder.addChild(g);
-      if (p.kind === "ramp" || p.kind === "rampLong") drawRamp(g, u, FOOTPRINT[p.kind].w, FOOTPRINT[p.kind].h, p.flip);
+      if (p.kind === "ramp" || p.kind === "rampLong") {
+        drawRamp(g, u, FOOTPRINT[p.kind].w, FOOTPRINT[p.kind].h, p.flip);
+        if (p.placed && !this.running && this.build.phase === "build" && (!this.range || this.inRange(p))) {
+          const badge = new Graphics();
+          drawFlipBadge(badge, u);
+          badge.position.set((FOOTPRINT[p.kind].w * u) / 2, (FOOTPRINT[p.kind].h * u) / 2 - u * 0.42);
+          holder.addChild(badge);
+        }
+      }
       else if (p.kind === "chute") drawChute(g, u);
       else if (p.kind === "buffer") drawBuffer(g, u);
       else if (p.kind === "lever") drawFulcrum(g, u);
@@ -420,6 +430,10 @@ export class Stage {
       const c = new Container();
       const s = this.sprite("toy", u * 1.05);
       c.addChild(s);
+      const arrow = new Graphics();
+      drawFacingArrow(arrow, u);
+      arrow.label = "facing";
+      c.addChild(arrow);
       this.dynLayer.addChild(c);
       this.sprites.set(t.id, c);
     }
@@ -502,6 +516,8 @@ export class Stage {
       c.scale.x = t.dir > 0 ? -1 : 1;
       c.rotation = t.mode === "walk" ? Math.sin(t.step / 5) * 0.05 : 0;
       c.visible = t.mode !== "gone" && t.id !== hidden;
+      const arrow = c.getChildByLabel("facing");
+      if (arrow) arrow.visible = !this.running;
     }
     for (const tr of st.trolleys) {
       const c = this.sprites.get(tr.id);
@@ -712,7 +728,10 @@ export class Stage {
       } else if (d.valid) {
         sfx.clack();
         if (d.id) this.cb.onCommand({ type: "move", id: d.id, gx: d.gx, gy: d.gy });
-        else this.cb.onCommand({ type: "place", kind: d.kind, gx: d.gx, gy: d.gy, flip: d.flip });
+        else {
+          this.cb.onCommand({ type: "place", kind: d.kind, gx: d.gx, gy: d.gy, flip: d.flip });
+          firstTimeHint(d.kind, (m) => this.cb.onHint(m));
+        }
       } else {
         const r = canPlace(this.level, this.build.placements, d.kind, d.gx, d.gy, d.flip, d.id, this.range);
         if (!r.ok) this.cb.onHint(r.reason);
@@ -979,3 +998,35 @@ function drawPartAtOrigin(c: Container, kind: PartKind, flip: boolean, u: number
 }
 
 export { leverEnds };
+
+const FIRST_HINTS: Partial<Record<PartKind, [string, string]>> = {
+  toy: ["trs-hint-toy", "Tap a placed toy to turn it around. The arrow shows which way it will walk."],
+  ramp: ["trs-hint-ramp", "Tap a placed ramp to flip which way it slopes."],
+  rampLong: ["trs-hint-ramp", "Tap a placed ramp to flip which way it slopes."],
+};
+
+function firstTimeHint(kind: PartKind, show: (m: string) => void): void {
+  const h = FIRST_HINTS[kind];
+  if (!h) return;
+  try {
+    if (localStorage.getItem(h[0])) return;
+    localStorage.setItem(h[0], "1");
+  } catch { /* private mode: show every time */ }
+  show(h[1]);
+}
+
+/** Walking-direction arrow above a toy; drawn pointing left, flipped with the toy. */
+function drawFacingArrow(g: Graphics, u: number): void {
+  const y = -u * 1.32;
+  g.roundRect(-u * 0.42, y - u * 0.17, u * 0.84, u * 0.34, u * 0.17).fill({ color: 0xfff6e0 }).stroke({ width: Math.max(1.5, u * 0.05), color: 0x2b2118 });
+  g.poly([-u * 0.3, y, -u * 0.08, y - u * 0.12, -u * 0.08, y - u * 0.045, u * 0.28, y - u * 0.045, u * 0.28, y + u * 0.045, -u * 0.08, y + u * 0.045, -u * 0.08, y + u * 0.12]).fill({ color: 0xc0392b });
+}
+
+/** Small round "tap to flip" badge: two opposed arrowheads. */
+function drawFlipBadge(g: Graphics, u: number): void {
+  const r = u * 0.26;
+  g.circle(0, 0, r).fill({ color: 0xfff6e0 }).stroke({ width: Math.max(1.5, u * 0.045), color: 0x2b2118 });
+  const a = r * 0.55;
+  g.poly([-a, -a * 0.25, -a * 0.2, -a * 0.8, -a * 0.2, a * 0.3]).fill({ color: 0x2b2118 });
+  g.poly([a, a * 0.25, a * 0.2, a * 0.8, a * 0.2, -a * 0.3]).fill({ color: 0x2b2118 });
+}

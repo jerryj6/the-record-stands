@@ -174,15 +174,24 @@ describe("level 5 — Bucket Brigade", () => {
     legal(L5, SOLUTIONS["gala-05"]!);
     const r = runMachine(L5, SOLUTIONS["gala-05"]!);
     expect(r.verdict.success).toBe(true);
+    const caught = r.events.find((e) => e.type === "catch");
+    const tip = r.events.find((e) => e.type === "tip" && e.id === "brake");
+    expect(caught).toBeDefined();
+    expect(tip?.tick).toBe(caught!.tick);
+    expect(r.final.marbles[0]!.mode).toBe("caught");
     const noBucket = runMachine(L5, SOLUTIONS["gala-05"]!.filter((p) => p.kind !== "bucket"));
     expect(noBucket.verdict.reasons).toEqual(["No one saw “TROLLEY PASSES ARCH”."]);
   });
   it("tempting wrong build: a bucket on the ground catches the marble but releases nothing", () => {
-    const r = runMachine(L5, [P("a", "rampLong", 7, 5), P("b", "bucket", 20, 11)]);
+    const r = runMachine(L5, [P("a", "rampLong", 7, 5), P("b", "bucket", 17, 11)]);
     expect(r.verdict.reasons).toEqual(["No one saw “TROLLEY PASSES ARCH”."]);
   });
+  it("a bare marble landing on the brake's raised end is not enough to trip it", () => {
+    const r = runMachine(L5, [P("a", "rampLong", 7, 5)]);
+    expect(r.events.some((e) => e.type === "tip")).toBe(false);
+  });
   it("tempting wrong build: a bucket on the brake's low end adds weight where it already is", () => {
-    const r = runMachine(L5, [P("a", "rampLong", 7, 5), P("b", "bucket", 18, 10)]);
+    const r = runMachine(L5, [P("a", "rampLong", 7, 5), P("b", "bucket", 14, 10)]);
     expect(r.verdict.success).toBe(false);
     expect(r.verdict.stamps[1]!.hitTick).toBeNull();
   });
@@ -197,11 +206,11 @@ describe("level 6 — The Clockwork Gate", () => {
     expect(t[1]!).toBeLessThan(t[2]!);
   });
   it("tempting wrong build: a toy started too close rings the gate before the trolley passes", () => {
-    const r = runMachine(L6, [P("a", "rampLong", 7, 5), P("b", "bucket", 21, 10), P("t", "toy", 10, 11, true)]);
+    const r = runMachine(L6, [P("a", "rampLong", 7, 5), P("b", "bucket", 17, 10), P("t", "toy", 9, 11, true)]);
     expect(r.verdict.reasons).toEqual(["“GATE BELL RINGS” happened before “TROLLEY PASSES ARCH”."]);
   });
   it("tempting wrong build: a toy started too far away winds down before the gate", () => {
-    const r = runMachine(L6, [P("a", "rampLong", 7, 5), P("b", "bucket", 21, 10), P("t", "toy", 14, 11, true)]);
+    const r = runMachine(L6, [P("a", "rampLong", 7, 5), P("b", "bucket", 17, 10), P("t", "toy", 14, 11, true)]);
     expect(r.verdict.reasons).toEqual(["No one saw “GATE BELL RINGS”."]);
   });
 });
