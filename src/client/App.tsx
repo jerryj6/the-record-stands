@@ -183,6 +183,16 @@ export function App() {
           <button className="primary" disabled={!(last?.evaluation.success && last.withinBudget)}
             onClick={() => act({ type: "AcceptResult" })}>Present findings</button>
         </div>
+        {state.solved && <div className="ending" data-ending={levelId}>
+          <h3>The record stands. Case closed.</h3>
+          <p>{level.title} — the archive accepts your account.</p>
+          {levelId === "TRS-12"
+            ? <p className="why">Every file in the archive now reads true. The night clerk stamps the last ledger: the town's twelve accounts all hold — and you are why.</p>
+            : <p className="why">The clerk pulls the next folder toward you.</p>}
+          <div className="actions">
+            <button className="link" onClick={() => setScreen("select")}>→ Case files</button>
+          </div>
+        </div>}
         {last && <div className={`verdict ${last.evaluation.success ? "pass" : "fail"}`} data-hints-used={hintsUsed}>
           {last.evaluation.success ? "All evidence supports the account." : "The account does not hold."}
           {!last.evaluation.success && (() => {
