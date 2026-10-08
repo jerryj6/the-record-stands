@@ -4,7 +4,7 @@
  * A Test re-runs the whole timeline from the case's initial state (TRS-009):
  * it never partially alters a past replay.
  */
-import { createHash } from "node:crypto";
+import { sha256Hex } from "../hash.js";
 import type { DeterministicEngine, GameEvent, RunEvaluation } from "../contracts.js";
 import { RULES_VERSION } from "../contracts.js";
 import { simulate } from "./sim.js";
@@ -43,7 +43,7 @@ export function stableStringify(v: unknown): string {
   return `{${Object.keys(o).sort().map(k => `${JSON.stringify(k)}:${stableStringify(o[k])}`).join(",")}}`;
 }
 export function canonicalHashOf(v: unknown): string {
-  return createHash("sha256").update(stableStringify(v)).digest("hex");
+  return sha256Hex(stableStringify(v));
 }
 
 export class TrsEngine implements DeterministicEngine<CaseDefinition, TrsPlayState, TrsAction> {
@@ -74,9 +74,10 @@ export class TrsEngine implements DeterministicEngine<CaseDefinition, TrsPlaySta
     switch (a.type) {
       case "SetIntervention": {
         // socket compatibility for toys
-        if (a.intervention.kind === "PlaceAndArmToy") {
-          const ok = level.sockets.some(x => x.socketId === a.intervention.socketId && x.accepts.includes("PlaceAndArmToy"));
-          if (!ok) return { ok: false, reason: `socket ${a.intervention.socketId} does not accept PlaceAndArmToy` };
+        const iv = a.intervention;
+        if (iv.kind === "PlaceAndArmToy") {
+          const ok = level.sockets.some(x => x.socketId === iv.socketId && x.accepts.includes("PlaceAndArmToy"));
+          if (!ok) return { ok: false, reason: `socket ${iv.socketId} does not accept PlaceAndArmToy` };
         }
         return { ok: true };
       }

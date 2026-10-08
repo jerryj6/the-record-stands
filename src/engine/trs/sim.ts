@@ -11,7 +11,7 @@
  */
 import type { GameEvent } from "../contracts.js";
 import type {
-  ActorDef, BeatLog, CaseDefinition, EntityRuntime, Intervention,
+  BeatLog, CaseDefinition, EntityRuntime, Intervention,
   RouteDef, RouteWaypoint, Timeline,
 } from "./types.js";
 
@@ -39,7 +39,7 @@ function setField(ctx: SimCtx, id: string, key: string, value: unknown): void {
   e.fields[key] = value;
 }
 function emit(ctx: SimCtx, beat: number, type: string, entityId?: string, data?: Record<string, unknown>): void {
-  ctx.events.push({ beat, type, entityId, ...(data ? { data } : {}) });
+  ctx.events.push({ beat, type, ...(entityId !== undefined ? { entityId } : {}), ...(data ? { data } : {}) });
 }
 
 /** Snapshotted gameplay-relevant fields of every entity (ordered). */
